@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-04T00:00:00Z",
+  "assets": {
+    "3d_models": [
+      {
+        "id": "cocktail-green",
+        "name": "Elphaba's Elixir Glass",
+        "path": "/assets/3d/cocktail-green.glb",
+        "format": "glb",
+        "size": 245000,
+        "checksum": "abc123",
+        "tags": ["cocktail", "green", "wicked"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      },
+      {
+        "id": "cocktail-pink",
+        "name": "Glinda's Sparkle Glass",
+        "path": "/assets/3d/cocktail-pink.glb",
+        "format": "glb",
+        "size": 238000,
+        "checksum": "def456",
+        "tags": ["cocktail", "pink", "glinda"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      },
+      {
+        "id": "cocktail-amber",
+        "name": "Oz Old Fashioned Glass",
+        "path": "/assets/3d/cocktail-amber.glb",
+        "format": "glb",
+        "size": 251000,
+        "checksum": "ghi789",
+        "tags": ["cocktail", "amber", "oz"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      }
+    ],
+    "overlays": [
+      {
+        "id": "emerald-city-skyline",
+        "name": "Emerald City Skyline",
+        "path": "/assets/overlays/emerald-skyline.png",
+        "format": "png",
+        "size": 512000,
+        "dimensions": { "width": 2048, "height": 1024 },
+        "checksum": "jkl012",
+        "tags": ["overlay", "emerald-city", "background"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      },
+      {
+        "id": "wicked-frame",
+        "name": "Wicked Photo Frame",
+        "path": "/assets/overlays/wicked-frame.png",
+        "format": "png",
+        "size": 384000,
+        "dimensions": { "width": 1920, "height": 1080 },
+        "checksum": "mno345",
+        "tags": ["overlay", "frame", "photo-booth"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      }
+    ],
+    "textures": [
+      {
+        "id": "emerald-sparkle",
+        "name": "Emerald Sparkle Texture",
+        "path": "/assets/textures/emerald-sparkle.jpg",
+        "format": "jpg",
+        "size": 156000,
+        "dimensions": { "width": 1024, "height": 1024 },
+        "checksum": "pqr678",
+        "tags": ["texture", "emerald", "sparkle"],
+        "approved": true,
+        "approvedBy": "ghost-cms",
+        "approvedAt": "2025-11-03T12:00:00Z"
+      }
+    ]
+  },
+  "scenes": {
+    "photo-booth": {
+      "name": "Photo Booth Experience",
+      "assets": ["wicked-frame", "emerald-city-skyline"],
+      "preload": true
+    },
+    "cocktails": {
+      "name": "Cocktail Menu",
+      "assets": ["cocktail-green", "cocktail-pink", "cocktail-amber", "emerald-sparkle"],
+      "preload": true
+    }
+  }
+}
