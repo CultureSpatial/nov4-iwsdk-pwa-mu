@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { PerspectiveCamera, Grid } from "@react-three/drei"
+import { PerspectiveCamera } from "@react-three/drei"
 import * as THREE from "three"
 import { IWSDKManager } from "@/lib/iwsdk-manager"
 import { UniversalARManager } from "@/lib/universal-ar"
+import { CameraPassthrough } from "./camera-passthrough"
 
 interface MRDemoSceneProps {
   controls: {
@@ -108,48 +109,9 @@ function InteractivePlane({ controls }: MRDemoSceneProps) {
   )
 }
 
-function AREnvironment() {
-  return (
-    <>
-      {/* Ambient lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-      <directionalLight position={[-10, 5, -5]} intensity={0.3} />
-
-      {/* Grid floor */}
-      <Grid
-        args={[20, 20]}
-        cellSize={0.5}
-        cellThickness={0.5}
-        cellColor="#6366f1"
-        sectionSize={2}
-        sectionThickness={1}
-        sectionColor="#8b5cf6"
-        fadeDistance={25}
-        fadeStrength={1}
-        followCamera={false}
-        infiniteGrid
-      />
-
-      {/* Reference objects */}
-      <mesh position={[-2, 0.5, -2]}>
-        <boxGeometry args={[0.3, 0.3, 0.3]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-      <mesh position={[2, 0.5, -2]}>
-        <sphereGeometry args={[0.2, 32, 32]} />
-        <meshStandardMaterial color="#3b82f6" />
-      </mesh>
-      <mesh position={[0, 0.5, -3]}>
-        <cylinderGeometry args={[0.15, 0.15, 0.5, 32]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
-    </>
-  )
-}
-
 export function MRDemoScene({ controls }: MRDemoSceneProps) {
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isCameraReady, setIsCameraReady] = useState(false)
 
   useEffect(() => {
     const initializeAR = async () => {
@@ -185,12 +147,26 @@ export function MRDemoScene({ controls }: MRDemoSceneProps) {
   }, [controls.physics])
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-slate-900 to-black">
-      <Canvas shadows>
-        <PerspectiveCamera makeDefault position={[0, 2, 5]} fov={60} />
-        <AREnvironment />
-        {isInitialized && <InteractivePlane controls={controls} />}
-      </Canvas>
+    <div className="w-full h-full relative">
+      <CameraPassthrough onReady={() => setIsCameraReady(true)} />
+
+      <div className="absolute inset-0 pointer-events-auto">
+        <Canvas
+          shadows
+          gl={{
+            alpha: true,
+            antialias: true,
+            preserveDrawingBuffer: true, // Required for screenshots
+          }}
+          style={{ background: "transparent" }}
+        >
+          <PerspectiveCamera makeDefault position={[0, 2, 5]} fov={60} />
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+          <directionalLight position={[-10, 5, -5]} intensity={0.5} />
+          {isInitialized && isCameraReady && <InteractivePlane controls={controls} />}
+        </Canvas>
+      </div>
     </div>
   )
 }
