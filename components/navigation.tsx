@@ -19,6 +19,8 @@ import {
   Calendar,
   Hand,
   ClipboardCheck,
+  Sparkles,
+  QrCode,
 } from "lucide-react"
 
 const routes = [
@@ -30,6 +32,8 @@ const routes = [
   { name: "IWSDK Demo", path: "/ar/iwsdk", icon: Activity },
   { name: "Presenter Dashboard", path: "/presenter", icon: Presentation },
   { name: "Event Runbook", path: "/runbook", icon: ClipboardCheck }, // Added Runbook page for day-of operations
+  { name: "Effects & Assets", path: "/effects", icon: Sparkles }, // Added Effects tracking page
+  { name: "QR Codes", path: "/qr-codes", icon: QrCode }, // Added QR Codes page
   { name: "ACE Workflow", path: "/ace", icon: Activity },
   { name: "IWSDK Tests", path: "/test/iwsdk", icon: TestTube },
   { name: "Influencer Kit", path: "/influencer", icon: Users },

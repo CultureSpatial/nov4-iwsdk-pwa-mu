@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MRDemoScene } from "@/components/ar/mr-demo-scene"
+import { EmeraldGlowOverlay } from "@/components/effects/emerald-glow-overlay"
 import { trackEvent } from "@/lib/analytics"
 import { Play, Hand, Maximize2, RotateCw, Move, Camera } from "lucide-react"
 
 export default function MRDemoPage() {
   const [isActive, setIsActive] = useState(false)
+  const [showGlow, setShowGlow] = useState(false)
   const [controls, setControls] = useState({
     move: true,
     rotate: true,
@@ -19,8 +21,11 @@ export default function MRDemoPage() {
   const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(null)
 
   const startDemo = () => {
-    setIsActive(true)
-    trackEvent("mr_demo_started", { timestamp: new Date().toISOString() })
+    setShowGlow(true)
+    setTimeout(() => {
+      setIsActive(true)
+      trackEvent("mr_demo_started", { timestamp: new Date().toISOString() })
+    }, 500)
   }
 
   const toggleControl = (control: keyof typeof controls) => {
@@ -75,38 +80,10 @@ export default function MRDemoPage() {
     }
   }
 
-  if (capturedScreenshot) {
-    return (
-      <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-        <Card className="max-w-4xl w-full p-6 bg-slate-800/90 border-purple-500/20">
-          <h2 className="text-2xl font-bold text-white mb-4 text-center">Screenshot Captured</h2>
-          <img
-            src={capturedScreenshot || "/placeholder.svg"}
-            alt="MR Demo Screenshot"
-            className="w-full rounded-lg mb-6"
-          />
-          <div className="flex gap-4">
-            <Button
-              onClick={() => setCapturedScreenshot(null)}
-              variant="outline"
-              className="flex-1 border-purple-500 text-white hover:bg-purple-800 bg-transparent"
-            >
-              Close
-            </Button>
-            <Button onClick={downloadScreenshot} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
-              Download
-            </Button>
-            <Button onClick={shareScreenshot} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
-              Share
-            </Button>
-          </div>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <EmeraldGlowOverlay show={showGlow} duration={2000} onComplete={() => setShowGlow(false)} />
+
       {!isActive ? (
         <div className="flex items-center justify-center min-h-screen p-6">
           <Card className="max-w-2xl w-full p-8 bg-slate-800/50 border-purple-500/20">
@@ -189,6 +166,34 @@ export default function MRDemoPage() {
               </p>
             </Card>
           </div>
+        </div>
+      )}
+
+      {capturedScreenshot && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <Card className="max-w-4xl w-full p-6 bg-slate-800/90 border-purple-500/20">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">Screenshot Captured</h2>
+            <img
+              src={capturedScreenshot || "/placeholder.svg"}
+              alt="MR Demo Screenshot"
+              className="w-full rounded-lg mb-6"
+            />
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setCapturedScreenshot(null)}
+                variant="outline"
+                className="flex-1 border-purple-500 text-white hover:bg-purple-800 bg-transparent"
+              >
+                Close
+              </Button>
+              <Button onClick={downloadScreenshot} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                Download
+              </Button>
+              <Button onClick={shareScreenshot} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
+                Share
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </div>
