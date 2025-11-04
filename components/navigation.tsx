@@ -22,6 +22,7 @@ import {
   Sparkles,
   QrCode,
   CalendarDays,
+  Webhook,
 } from "lucide-react"
 
 const routes = [
@@ -38,6 +39,7 @@ const routes = [
   { name: "QR Codes", path: "/qr-codes", icon: QrCode },
   { name: "ACE Workflow", path: "/ace", icon: Activity },
   { name: "IWSDK Tests", path: "/test/iwsdk", icon: TestTube },
+  { name: "Customer.io Test", path: "/test/customerio", icon: Webhook }, // Added Customer.io test page to navigation
   { name: "Influencer Kit", path: "/influencer", icon: Users },
   { name: "Retailer Dashboard", path: "/retailer", icon: Store },
   { name: "Hybrid Event", path: "/event", icon: Calendar },
