@@ -264,3 +264,14 @@ export class SessionTracker {
     return this.interactionCount
   }
 }
+
+/**
+ * Generic event tracking function
+ * Use this for custom events not covered by specific tracking functions
+ */
+export function trackEvent(eventName: string, properties?: Record<string, any>) {
+  track(eventName, {
+    ...properties,
+    timestamp: new Date().toISOString(),
+  })
+}
