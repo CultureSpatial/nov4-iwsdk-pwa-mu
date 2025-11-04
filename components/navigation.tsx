@@ -5,10 +5,24 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Home, Camera, Wine, Users, TestTube, Presentation, Activity, Scan, Store, Calendar } from "lucide-react"
+import {
+  Menu,
+  Home,
+  Camera,
+  Wine,
+  Users,
+  TestTube,
+  Presentation,
+  Activity,
+  Scan,
+  Store,
+  Calendar,
+  Hand,
+} from "lucide-react"
 
 const routes = [
   { name: "Home", path: "/", icon: Home },
+  { name: "MR Demo", path: "/mr-demo", icon: Hand }, // Added MR Demo route
   { name: "Photo Booth", path: "/ar/photo-booth", icon: Camera },
   { name: "Cocktails", path: "/ar/cocktails", icon: Wine },
   { name: "AR Scan", path: "/ar/scan", icon: Scan },

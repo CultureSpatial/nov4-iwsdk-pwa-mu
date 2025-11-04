@@ -145,6 +145,11 @@ export default function PresenterDashboard() {
     setChecklist((prev) => ({ ...prev, [item]: !prev[item] }))
   }
 
+  const launchMRDemo = () => {
+    window.open("/mr-demo", "_blank")
+    trackEvent("mr_demo_launched", { timestamp: new Date().toISOString() })
+  }
+
   const currentScript = DEMO_SCRIPT[currentPhase]
   const totalDuration = DEMO_SCRIPT.reduce((sum, phase) => sum + phase.duration, 0)
   const progress = (elapsedTime / totalDuration) * 100
@@ -253,6 +258,10 @@ export default function PresenterDashboard() {
         <Card className="p-6 bg-slate-800/50 border-purple-500/20">
           <h2 className="text-xl font-semibold text-white mb-4">IWSDK Features</h2>
           <div className="grid grid-cols-2 gap-4">
+            <Button onClick={launchMRDemo} variant="default" className="col-span-2">
+              <Play className="w-4 h-4 mr-2" />
+              Launch MR Demo (New Window)
+            </Button>
             <Button
               onClick={enableHandTracking}
               variant={systemStatus.handTracking ? "default" : "outline"}
