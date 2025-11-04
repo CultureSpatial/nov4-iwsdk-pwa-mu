@@ -21,19 +21,21 @@ import {
   ClipboardCheck,
   Sparkles,
   QrCode,
+  CalendarDays,
 } from "lucide-react"
 
 const routes = [
   { name: "Home", path: "/", icon: Home },
-  { name: "MR Demo", path: "/mr-demo", icon: Hand }, // Added MR Demo route
+  { name: "Events", path: "/events", icon: CalendarDays }, // Added Events route
+  { name: "MR Demo", path: "/mr-demo", icon: Hand },
   { name: "Photo Booth", path: "/ar/photo-booth", icon: Camera },
   { name: "Cocktails", path: "/ar/cocktails", icon: Wine },
   { name: "AR Scan", path: "/ar/scan", icon: Scan },
   { name: "IWSDK Demo", path: "/ar/iwsdk", icon: Activity },
   { name: "Presenter Dashboard", path: "/presenter", icon: Presentation },
-  { name: "Event Runbook", path: "/runbook", icon: ClipboardCheck }, // Added Runbook page for day-of operations
-  { name: "Effects & Assets", path: "/effects", icon: Sparkles }, // Added Effects tracking page
-  { name: "QR Codes", path: "/qr-codes", icon: QrCode }, // Added QR Codes page
+  { name: "Event Runbook", path: "/runbook", icon: ClipboardCheck },
+  { name: "Effects & Assets", path: "/effects", icon: Sparkles },
+  { name: "QR Codes", path: "/qr-codes", icon: QrCode },
   { name: "ACE Workflow", path: "/ace", icon: Activity },
   { name: "IWSDK Tests", path: "/test/iwsdk", icon: TestTube },
   { name: "Influencer Kit", path: "/influencer", icon: Users },
