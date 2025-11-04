@@ -117,6 +117,37 @@ export default function EffectsPage() {
           <p className="text-emerald-200 text-balance">
             Visual effects and assets for the Nov 4 Cultural Hospitality AR Pilot
           </p>
+          <Card className="bg-emerald-900/30 border-emerald-700">
+            <CardHeader>
+              <CardTitle className="text-white">Design Principles (Research-Backed)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-emerald-100 text-sm">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Ease of Use:</strong> Intuitive interactions that require no training
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Innovativeness:</strong> Novel AR features that surprise and delight
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Usefulness:</strong> Practical value beyond entertainment (menu info, photo capture)
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Performance:</strong> Smooth 60fps experiences on target devices
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-emerald-900/50 border-emerald-700">
@@ -227,6 +258,14 @@ export default function EffectsPage() {
                 <li>Maintain feature parity between WebXR and 8th Wall versions</li>
                 <li>Test on iOS Safari 17+ and Android Chrome 125+</li>
               </ol>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-white">Why This Matters:</h3>
+              <p className="text-sm">
+                Research shows 63% of millennial travelers prefer accommodations with AR interactions. iOS users
+                represent a significant portion of this demographic, making 8th Wall integration critical for maximum
+                reach and engagement.
+              </p>
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-white">Status:</h3>

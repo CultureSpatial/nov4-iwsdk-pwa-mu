@@ -64,7 +64,7 @@ export default function LandingPage() {
       e.preventDefault()
       setDeferredPrompt(e)
       // Show PWA prompt for mobile devices
-      if (info.platform === "iOS" || info.platform === "Android") {
+      if (deviceInfo?.platform === "iOS" || deviceInfo?.platform === "Android") {
         setShowPWAPrompt(true)
       }
     }
@@ -108,6 +108,25 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-emerald-900 to-black text-white">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8">
+          <Card className="bg-emerald-900/30 border-emerald-700">
+            <CardContent className="pt-6">
+              <div className="grid md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <div className="text-3xl font-bold text-emerald-400">71%</div>
+                  <div className="text-sm text-emerald-200">of travelers find AR previews useful</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-emerald-400">80%</div>
+                  <div className="text-sm text-emerald-200">appreciate AR entertainment options</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-emerald-400">25%</div>
+                  <div className="text-sm text-emerald-200">increase in engagement with AR menus</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {showPWAPrompt && (
             <Alert className="bg-emerald-800 border-emerald-600">
               <Download className="h-4 w-4" />
@@ -147,7 +166,7 @@ export default function LandingPage() {
             <p className="text-xl text-emerald-200 text-balance">
               Experience the future of mise en scène with digital drops
             </p>
-            <p className="text-sm text-emerald-300">Nov 4 Event • Seattle</p>
+            <p className="text-sm text-emerald-300">Nov 4 Event • Seattle • Easy to use, no app required</p>
           </div>
 
           {/* Device Info Card */}
@@ -178,7 +197,7 @@ export default function LandingPage() {
           )}
 
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-center">AR Experiences</h2>
+            <h2 className="text-2xl font-bold text-center">Innovative AR Experiences</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <Link href="/ar/photo-booth" onClick={() => handleStartExperience("webxr")}>
                 <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors h-full cursor-pointer">
