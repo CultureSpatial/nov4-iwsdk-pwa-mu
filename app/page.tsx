@@ -1,10 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Navigation } from "@/components/navigation"
 import { trackPWAInstalled, trackExperienceStarted, SessionTracker, getDeviceInfo } from "@/lib/analytics"
+import { Camera, Wine, Scan, Activity, Presentation, TestTube } from "lucide-react"
 
 export default function LandingPage() {
   const [sessionTracker] = useState(() => new SessionTracker())
@@ -35,11 +38,12 @@ export default function LandingPage() {
   const handleStartExperience = (type: "webxr" | "2d_fallback") => {
     trackExperienceStarted(type)
     sessionTracker.recordInteraction("start_experience", { type })
-    // Navigate to experience (to be implemented)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-emerald-900 to-black text-white">
+      <Navigation />
+
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
@@ -48,6 +52,7 @@ export default function LandingPage() {
             <p className="text-xl text-emerald-200 text-balance">
               Experience the future of mise en scène with digital drops
             </p>
+            <p className="text-sm text-emerald-300">Nov 4 Event • Seattle</p>
           </div>
 
           {/* Device Info Card */}
@@ -72,72 +77,138 @@ export default function LandingPage() {
             </Card>
           )}
 
-          {/* Experience Options */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white">WebXR Experience</CardTitle>
-                <CardDescription className="text-emerald-200">Immersive AR with full spatial tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleStartExperience("webxr")}
-                  disabled={!deviceInfo?.webxrSupported}
-                >
-                  {deviceInfo?.webxrSupported ? "Start AR Experience" : "WebXR Not Available"}
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-center">AR Experiences</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link href="/ar/photo-booth" onClick={() => handleStartExperience("webxr")}>
+                <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-5 w-5" />
+                      <CardTitle className="text-white">Photo Booth</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Capture moments with AR filters and Emerald City frames
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700">Open Photo Booth</Button>
+                  </CardContent>
+                </Card>
+              </Link>
 
-            <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white">2D Experience</CardTitle>
-                <CardDescription className="text-emerald-200">Interactive mobile experience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleStartExperience("2d_fallback")}
-                >
-                  Start 2D Experience
-                </Button>
-              </CardContent>
-            </Card>
+              <Link href="/ar/cocktails" onClick={() => handleStartExperience("webxr")}>
+                <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Wine className="h-5 w-5" />
+                      <CardTitle className="text-white">Cocktail Menu</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Explore Wicked-themed drinks with interactive 3D models
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700">View Menu</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href="/ar/scan" onClick={() => handleStartExperience("webxr")}>
+                <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Scan className="h-5 w-5" />
+                      <CardTitle className="text-white">AR Label Scan</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Scan labels to unlock AR experiences and stories
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700">Start Scanning</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+
+              <Link href="/ar/iwsdk" onClick={() => handleStartExperience("webxr")}>
+                <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-5 w-5" />
+                      <CardTitle className="text-white">IWSDK Demo</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Full immersive AR with hand tracking and physics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      className="w-full bg-emerald-600 hover:bg-emerald-700"
+                      disabled={!deviceInfo?.webxrSupported}
+                    >
+                      {deviceInfo?.webxrSupported ? "Launch IWSDK" : "WebXR Not Available"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </div>
 
-          {/* Features */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className="bg-emerald-900/30 border-emerald-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Photo Booth</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-emerald-200 text-sm">Capture moments with AR filters</p>
-              </CardContent>
-            </Card>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-center">Presenter & Admin Tools</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link href="/presenter">
+                <Card className="bg-emerald-900/30 border-emerald-700 hover:bg-emerald-900/50 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Presentation className="h-5 w-5" />
+                      <CardTitle className="text-white">Presenter Dashboard</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Control the Nov 4 demo with phase-by-phase guidance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      variant="outline"
+                      className="w-full border-emerald-600 text-emerald-100 hover:bg-emerald-900 bg-transparent"
+                    >
+                      Open Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
 
-            <Card className="bg-emerald-900/30 border-emerald-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Cocktail Menu</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-emerald-200 text-sm">Explore Wicked-themed drinks</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-emerald-900/30 border-emerald-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Interactive Polls</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-emerald-200 text-sm">Engage with real-time voting</p>
-              </CardContent>
-            </Card>
+              <Link href="/test/iwsdk">
+                <Card className="bg-emerald-900/30 border-emerald-700 hover:bg-emerald-900/50 transition-colors h-full cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <TestTube className="h-5 w-5" />
+                      <CardTitle className="text-white">IWSDK Tests</CardTitle>
+                    </div>
+                    <CardDescription className="text-emerald-200">
+                      Validate AR systems and performance metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      variant="outline"
+                      className="w-full border-emerald-600 text-emerald-100 hover:bg-emerald-900 bg-transparent"
+                    >
+                      Run Tests
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </div>
 
           {/* Session Info */}
-          <div className="text-center text-emerald-300 text-sm">Session ID: {sessionTracker.getSessionId()}</div>
+          <div className="text-center text-emerald-300 text-sm space-y-1">
+            <p>Session ID: {sessionTracker.getSessionId()}</p>
+            <p className="text-xs text-emerald-400">Use the menu button (top right) to access all features</p>
+          </div>
         </div>
       </div>
     </div>
