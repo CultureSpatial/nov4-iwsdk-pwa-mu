@@ -70,16 +70,20 @@ export async function sendTransactionalEmail(
   data: Record<string, any> = {},
 ) {
   const apiKey = process.env.CUSTOMERIO_API_KEY
-  if (!apiKey) {
+  const siteId = process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID
+
+  if (!apiKey || !siteId) {
     console.warn("[v0] Customer.io API key not configured")
     return { success: false, error: "API key not configured" }
   }
+
+  const authToken = Buffer.from(`${siteId}:${apiKey}`).toString("base64")
 
   try {
     const response = await fetch(`https://api.customer.io/v1/send/email`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Basic ${authToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -106,16 +110,20 @@ export async function sendTransactionalEmail(
 // Add user to a segment for targeted campaigns
 export async function addToSegment(userId: string, segmentId: string) {
   const apiKey = process.env.CUSTOMERIO_API_KEY
-  if (!apiKey) {
+  const siteId = process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID
+
+  if (!apiKey || !siteId) {
     console.warn("[v0] Customer.io API key not configured")
     return { success: false, error: "API key not configured" }
   }
+
+  const authToken = Buffer.from(`${siteId}:${apiKey}`).toString("base64")
 
   try {
     const response = await fetch(`https://track.customer.io/api/v1/customers/${userId}/segments/${segmentId}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Basic ${authToken}`,
         "Content-Type": "application/json",
       },
     })

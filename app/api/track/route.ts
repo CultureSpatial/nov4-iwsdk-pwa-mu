@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 const CUSTOMERIO_SITE_ID = process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID
 const CUSTOMERIO_API_KEY = process.env.CUSTOMERIO_API_KEY
-const CUSTOMERIO_TRACK_URL = "https://track.customer.io/api/v1"
+const CUSTOMERIO_CDP_URL = "https://cdp.customer.io/v1"
 
 interface TrackEventPayload {
   userId?: string
@@ -47,15 +47,20 @@ export async function POST(request: NextRequest) {
 async function handleIdentify(payload: IdentifyPayload) {
   const { userId, traits } = payload
 
-  const response = await fetch(`${CUSTOMERIO_TRACK_URL}/customers/${userId}`, {
-    method: "PUT",
+  const authToken = Buffer.from(`${CUSTOMERIO_SITE_ID}:${CUSTOMERIO_API_KEY}`).toString("base64")
+
+  const response = await fetch(`${CUSTOMERIO_CDP_URL}/identify`, {
+    method: "POST",
     headers: {
-      Authorization: `Bearer ${CUSTOMERIO_API_KEY}`,
+      Authorization: `Basic ${authToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      ...traits,
-      created_at: traits.created_at || Math.floor(Date.now() / 1000),
+      userId,
+      traits: {
+        ...traits,
+        created_at: traits.created_at || Math.floor(Date.now() / 1000),
+      },
     }),
   })
 
@@ -67,22 +72,24 @@ async function handleIdentify(payload: IdentifyPayload) {
 async function handleTrack(payload: TrackEventPayload) {
   const { userId, anonymousId, event, properties, timestamp } = payload
 
-  // Use userId if available, otherwise anonymousId
   const customerId = userId || anonymousId
 
   if (!customerId) {
     throw new Error("Either userId or anonymousId is required")
   }
 
-  const response = await fetch(`${CUSTOMERIO_TRACK_URL}/customers/${customerId}/events`, {
+  const authToken = Buffer.from(`${CUSTOMERIO_SITE_ID}:${CUSTOMERIO_API_KEY}`).toString("base64")
+
+  const response = await fetch(`${CUSTOMERIO_CDP_URL}/track`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${CUSTOMERIO_API_KEY}`,
+      Authorization: `Basic ${authToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name: event,
-      data: properties || {},
+      userId: customerId,
+      event,
+      properties: properties || {},
       timestamp: timestamp || Math.floor(Date.now() / 1000),
     }),
   })
