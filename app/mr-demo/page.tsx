@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MRDemoScene } from "@/components/ar/mr-demo-scene"
 import { trackEvent } from "@/lib/analytics"
-import { Play, Hand, Maximize2, RotateCw, Move } from "lucide-react"
+import { Play, Hand, Maximize2, RotateCw, Move, Camera } from "lucide-react"
 
 export default function MRDemoPage() {
   const [isActive, setIsActive] = useState(false)
@@ -16,6 +16,7 @@ export default function MRDemoPage() {
     scale: true,
     physics: false,
   })
+  const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(null)
 
   const startDemo = () => {
     setIsActive(true)
@@ -25,6 +26,83 @@ export default function MRDemoPage() {
   const toggleControl = (control: keyof typeof controls) => {
     setControls((prev) => ({ ...prev, [control]: !prev[control] }))
     trackEvent("mr_demo_control_toggled", { control, enabled: !controls[control] })
+  }
+
+  const captureScreenshot = () => {
+    const canvas = document.querySelector("canvas")
+    if (!canvas) {
+      console.error("[v0] No canvas found for screenshot")
+      return
+    }
+
+    try {
+      const dataUrl = canvas.toDataURL("image/png")
+      setCapturedScreenshot(dataUrl)
+      trackEvent("mr_demo_screenshot_captured", { timestamp: new Date().toISOString() })
+      console.log("[v0] Screenshot captured successfully")
+    } catch (error) {
+      console.error("[v0] Failed to capture screenshot:", error)
+    }
+  }
+
+  const downloadScreenshot = () => {
+    if (!capturedScreenshot) return
+
+    const link = document.createElement("a")
+    link.download = `mr-demo-${Date.now()}.png`
+    link.href = capturedScreenshot
+    link.click()
+    trackEvent("mr_demo_screenshot_downloaded", { timestamp: new Date().toISOString() })
+  }
+
+  const shareScreenshot = async () => {
+    if (!capturedScreenshot) return
+
+    try {
+      const blob = await (await fetch(capturedScreenshot)).blob()
+      const file = new File([blob], `mr-demo-${Date.now()}.png`, { type: "image/png" })
+
+      if (navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: "MR Demo Screenshot",
+          text: "Check out my MR demo experience!",
+        })
+        trackEvent("mr_demo_screenshot_shared", { method: "native" })
+      }
+    } catch (error) {
+      console.error("[v0] Share failed:", error)
+    }
+  }
+
+  if (capturedScreenshot) {
+    return (
+      <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <Card className="max-w-4xl w-full p-6 bg-slate-800/90 border-purple-500/20">
+          <h2 className="text-2xl font-bold text-white mb-4 text-center">Screenshot Captured</h2>
+          <img
+            src={capturedScreenshot || "/placeholder.svg"}
+            alt="MR Demo Screenshot"
+            className="w-full rounded-lg mb-6"
+          />
+          <div className="flex gap-4">
+            <Button
+              onClick={() => setCapturedScreenshot(null)}
+              variant="outline"
+              className="flex-1 border-purple-500 text-white hover:bg-purple-800 bg-transparent"
+            >
+              Close
+            </Button>
+            <Button onClick={downloadScreenshot} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+              Download
+            </Button>
+            <Button onClick={shareScreenshot} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
+              Share
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -91,6 +169,15 @@ export default function MRDemoPage() {
                   {key.charAt(0).toUpperCase() + key.slice(1)}
                 </Button>
               ))}
+              <Button
+                onClick={captureScreenshot}
+                variant="default"
+                size="sm"
+                className="w-full justify-start bg-purple-600 hover:bg-purple-700"
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Screenshot
+              </Button>
             </Card>
           </div>
 
