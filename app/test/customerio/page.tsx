@@ -2,72 +2,65 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 export default function CustomerIOTestPage() {
-  const [identifyData, setIdentifyData] = useState({
-    userId: "test_user_" + Date.now(),
-    name: "Test User",
-    email: "test@example.com",
-  })
+  const [userId, setUserId] = useState("test-user-" + Date.now())
+  const [email, setEmail] = useState("test@example.com")
+  const [name, setName] = useState("Test User")
+  const [eventName, setEventName] = useState("photo_captured")
+  const [eventProperties, setEventProperties] = useState('{"filter": "emerald_glow"}')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<Array<{ type: string; success: boolean; message: string }>>([])
 
-  const [trackData, setTrackData] = useState({
-    userId: "test_user_" + Date.now(),
-    event: "test_event",
-    properties: '{"source": "test_page", "value": 100}',
-  })
-
-  const [identifyStatus, setIdentifyStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
-  const [trackStatus, setTrackStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
-  const [identifyError, setIdentifyError] = useState("")
-  const [trackError, setTrackError] = useState("")
-
-  const handleIdentify = async () => {
-    setIdentifyStatus("loading")
-    setIdentifyError("")
-
+  const testIdentify = async () => {
+    setLoading(true)
     try {
       const response = await fetch("/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "identify",
-          userId: identifyData.userId,
-          traits: {
-            name: identifyData.name,
-            email: identifyData.email,
-          },
+          userId,
+          traits: { name, email },
         }),
       })
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to identify user")
-      }
-
-      setIdentifyStatus("success")
-      setTimeout(() => setIdentifyStatus("idle"), 3000)
+      const data = await response.json()
+      setResults((prev) => [
+        ...prev,
+        {
+          type: "identify",
+          success: response.ok,
+          message: response.ok ? "User identified successfully" : data.error || "Failed to identify user",
+        },
+      ])
     } catch (error) {
-      setIdentifyStatus("error")
-      setIdentifyError(error instanceof Error ? error.message : "Unknown error")
+      setResults((prev) => [
+        ...prev,
+        {
+          type: "identify",
+          success: false,
+          message: error instanceof Error ? error.message : "Unknown error",
+        },
+      ])
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleTrack = async () => {
-    setTrackStatus("loading")
-    setTrackError("")
-
+  const testTrackEvent = async () => {
+    setLoading(true)
     try {
       let properties = {}
       try {
-        properties = JSON.parse(trackData.properties)
+        properties = JSON.parse(eventProperties)
       } catch {
-        throw new Error("Invalid JSON in properties field")
+        properties = { raw: eventProperties }
       }
 
       const response = await fetch("/api/track", {
@@ -75,210 +68,196 @@ export default function CustomerIOTestPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "track",
-          userId: trackData.userId,
-          event: trackData.event,
+          userId,
+          event: eventName,
           properties,
         }),
       })
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to track event")
-      }
-
-      setTrackStatus("success")
-      setTimeout(() => setTrackStatus("idle"), 3000)
+      const data = await response.json()
+      setResults((prev) => [
+        ...prev,
+        {
+          type: "track",
+          success: response.ok,
+          message: response.ok ? `Event "${eventName}" tracked successfully` : data.error || "Failed to track event",
+        },
+      ])
     } catch (error) {
-      setTrackStatus("error")
-      setTrackError(error instanceof Error ? error.message : "Unknown error")
+      setResults((prev) => [
+        ...prev,
+        {
+          type: "track",
+          success: false,
+          message: error instanceof Error ? error.message : "Unknown error",
+        },
+      ])
+    } finally {
+      setLoading(false)
     }
   }
 
-  const StatusIcon = ({ status }: { status: string }) => {
-    if (status === "loading") return <Loader2 className="h-4 w-4 animate-spin" />
-    if (status === "success") return <CheckCircle2 className="h-4 w-4 text-green-500" />
-    if (status === "error") return <XCircle className="h-4 w-4 text-red-500" />
-    return null
+  const testFullFlow = async () => {
+    setResults([])
+    await testIdentify()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    await testTrackEvent()
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-black p-8">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-emerald-400">Customer.io Integration Test</h1>
-          <p className="mt-2 text-emerald-200">Test identify and track events</p>
+    <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-black p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-emerald-400">Customer.io Webhook Test</h1>
+          <p className="text-emerald-200">Test the webhook integration with Customer.io CDP API</p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Identify Test */}
-          <Card className="border-emerald-800 bg-emerald-950/50">
-            <CardHeader>
-              <CardTitle className="text-emerald-400">Identify User</CardTitle>
-              <CardDescription className="text-emerald-200">
-                Send user identification data to Customer.io
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="userId" className="text-emerald-300">
-                  User ID
-                </Label>
-                <Input
-                  id="userId"
-                  value={identifyData.userId}
-                  onChange={(e) => setIdentifyData({ ...identifyData, userId: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-emerald-300">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={identifyData.name}
-                  onChange={(e) => setIdentifyData({ ...identifyData, name: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-emerald-300">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={identifyData.email}
-                  onChange={(e) => setIdentifyData({ ...identifyData, email: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 text-white"
-                />
-              </div>
-
-              <Button
-                onClick={handleIdentify}
-                disabled={identifyStatus === "loading"}
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
-              >
-                {identifyStatus === "loading" ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send Identify"
-                )}
-              </Button>
-
-              {identifyStatus !== "idle" && (
-                <div className="flex items-center gap-2 rounded-md border border-emerald-700 bg-emerald-900/30 p-3">
-                  <StatusIcon status={identifyStatus} />
-                  <span className="text-sm text-emerald-200">
-                    {identifyStatus === "loading" && "Sending..."}
-                    {identifyStatus === "success" && "User identified successfully!"}
-                    {identifyStatus === "error" && `Error: ${identifyError}`}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Track Event Test */}
-          <Card className="border-emerald-800 bg-emerald-950/50">
-            <CardHeader>
-              <CardTitle className="text-emerald-400">Track Event</CardTitle>
-              <CardDescription className="text-emerald-200">Send custom event data to Customer.io</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="trackUserId" className="text-emerald-300">
-                  User ID
-                </Label>
-                <Input
-                  id="trackUserId"
-                  value={trackData.userId}
-                  onChange={(e) => setTrackData({ ...trackData, userId: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="event" className="text-emerald-300">
-                  Event Name
-                </Label>
-                <Input
-                  id="event"
-                  value={trackData.event}
-                  onChange={(e) => setTrackData({ ...trackData, event: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 text-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="properties" className="text-emerald-300">
-                  Properties (JSON)
-                </Label>
-                <Textarea
-                  id="properties"
-                  value={trackData.properties}
-                  onChange={(e) => setTrackData({ ...trackData, properties: e.target.value })}
-                  className="border-emerald-700 bg-emerald-900/50 font-mono text-sm text-white"
-                  rows={3}
-                />
-              </div>
-
-              <Button
-                onClick={handleTrack}
-                disabled={trackStatus === "loading"}
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
-              >
-                {trackStatus === "loading" ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send Event"
-                )}
-              </Button>
-
-              {trackStatus !== "idle" && (
-                <div className="flex items-center gap-2 rounded-md border border-emerald-700 bg-emerald-900/30 p-3">
-                  <StatusIcon status={trackStatus} />
-                  <span className="text-sm text-emerald-200">
-                    {trackStatus === "loading" && "Sending..."}
-                    {trackStatus === "success" && "Event tracked successfully!"}
-                    {trackStatus === "error" && `Error: ${trackError}`}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-emerald-800 bg-emerald-950/50">
+        <Card className="bg-emerald-950/50 border-emerald-800">
           <CardHeader>
-            <CardTitle className="text-emerald-400">Configuration Status</CardTitle>
+            <CardTitle className="text-emerald-400">User Identification</CardTitle>
+            <CardDescription className="text-emerald-300">
+              Send user data to Customer.io via /api/track webhook
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="userId" className="text-emerald-200">
+                User ID
+              </Label>
+              <Input
+                id="userId"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                className="bg-emerald-900/50 border-emerald-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-emerald-200">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-emerald-900/50 border-emerald-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-emerald-200">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-emerald-900/50 border-emerald-700 text-white"
+              />
+            </div>
+            <Button onClick={testIdentify} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700">
+              Test Identify
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-emerald-950/50 border-emerald-800">
+          <CardHeader>
+            <CardTitle className="text-emerald-400">Event Tracking</CardTitle>
+            <CardDescription className="text-emerald-300">Send custom events to Customer.io</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="eventName" className="text-emerald-200">
+                Event Name
+              </Label>
+              <Input
+                id="eventName"
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                className="bg-emerald-900/50 border-emerald-700 text-white"
+                placeholder="photo_captured"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="eventProperties" className="text-emerald-200">
+                Event Properties (JSON)
+              </Label>
+              <Textarea
+                id="eventProperties"
+                value={eventProperties}
+                onChange={(e) => setEventProperties(e.target.value)}
+                className="bg-emerald-900/50 border-emerald-700 text-white font-mono text-sm"
+                rows={4}
+                placeholder='{"filter": "emerald_glow", "timestamp": 1234567890}'
+              />
+            </div>
+            <Button onClick={testTrackEvent} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700">
+              Test Track Event
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-emerald-950/50 border-emerald-800">
+          <CardHeader>
+            <CardTitle className="text-emerald-400">Full Flow Test</CardTitle>
+            <CardDescription className="text-emerald-300">Test identify + track event in sequence</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm text-emerald-200">
-              <div className="flex items-center justify-between">
-                <span>Site ID:</span>
-                <span className="font-mono">
-                  {process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID ? "✓ Configured" : "✗ Missing"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>API Key:</span>
-                <span className="font-mono">Server-side only</span>
-              </div>
-              <div className="mt-4 rounded-md border border-emerald-700 bg-emerald-900/30 p-3">
-                <p className="text-xs">
-                  Add NEXT_PUBLIC_CUSTOMERIO_SITE_ID and CUSTOMERIO_API_KEY in the Vars section to enable tracking.
-                </p>
-              </div>
+            <Button
+              onClick={testFullFlow}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+            >
+              Run Full Test
+            </Button>
+          </CardContent>
+        </Card>
+
+        {results.length > 0 && (
+          <Card className="bg-emerald-950/50 border-emerald-800">
+            <CardHeader>
+              <CardTitle className="text-emerald-400">Test Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {results.map((result, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg bg-emerald-900/30 border border-emerald-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      variant={result.success ? "default" : "destructive"}
+                      className={result.success ? "bg-emerald-600" : ""}
+                    >
+                      {result.type}
+                    </Badge>
+                    <span className="text-emerald-200">{result.message}</span>
+                  </div>
+                  <span className="text-2xl">{result.success ? "✓" : "✗"}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="bg-emerald-950/50 border-emerald-800">
+          <CardHeader>
+            <CardTitle className="text-emerald-400">Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex justify-between text-emerald-200">
+              <span>Webhook Endpoint:</span>
+              <code className="text-emerald-400">/api/track</code>
+            </div>
+            <div className="flex justify-between text-emerald-200">
+              <span>Customer.io Site ID:</span>
+              <code className="text-emerald-400">{process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID || "Not configured"}</code>
+            </div>
+            <div className="flex justify-between text-emerald-200">
+              <span>API Key Status:</span>
+              <Badge variant={process.env.CUSTOMERIO_API_KEY ? "default" : "destructive"}>
+                {process.env.CUSTOMERIO_API_KEY ? "Configured" : "Missing"}
+              </Badge>
             </div>
           </CardContent>
         </Card>
