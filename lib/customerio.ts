@@ -13,56 +13,54 @@ interface CustomerIOIdentify {
   [key: string]: any
 }
 
-// Client-side tracking using Customer.io JavaScript snippet
-export function identifyUser(userId: string, attributes: Omit<CustomerIOIdentify, "id">) {
+// Client-side tracking using webhook-based tracking
+export async function identifyUser(userId: string, attributes: Record<string, any>) {
   if (typeof window === "undefined") return
 
-  const siteId = process.env.NEXT_PUBLIC_CUSTOMERIO_SITE_ID
-  if (!siteId) {
-    console.warn("[v0] Customer.io site ID not configured")
-    return
-  }
-
-  // Initialize Customer.io if not already loaded
-  if (!(window as any)._cio) {
-    const script = document.createElement("script")
-    script.src = `https://assets.customer.io/assets/track-eu.js`
-    script.async = true
-    script.onload = () => {
-      ;(window as any)._cio = (window as any)._cio || []
-      ;(() => {
-        const a = (f: any) => () => {
-          ;(window as any)._cio.push([f].concat(Array.prototype.slice.call(arguments, 0)))
-        }
-        const b = ["load", "identify", "sidentify", "track", "page"]
-        for (let i = 0; i < b.length; i++) {
-          ;(window as any)._cio[b[i]] = a(b[i])
-        }
-      })()
-      ;(window as any)._cio.load(siteId)
-      ;(window as any)._cio.identify({
-        id: userId,
-        ...attributes,
-      })
-    }
-    document.head.appendChild(script)
-  } else {
-    ;(window as any)._cio.identify({
-      id: userId,
-      ...attributes,
+  try {
+    await fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "identify",
+        userId,
+        traits: {
+          ...attributes,
+          created_at: attributes.created_at || Math.floor(Date.now() / 1000),
+        },
+      }),
     })
+  } catch (error) {
+    console.error("[v0] Failed to identify user:", error)
   }
 }
 
-// Client-side event tracking
-export function trackCustomerIOEvent(eventName: string, data: Record<string, any> = {}) {
+// Client-side event tracking using webhook endpoint
+export async function trackCustomerIOEvent(eventName: string, data: Record<string, any> = {}) {
   if (typeof window === "undefined") return
 
-  if (!(window as any)._cio) {
-    console.warn("[v0] Customer.io not initialized")
-    return
+  // Get or generate anonymous ID
+  let anonymousId = localStorage.getItem("cio_anonymous_id")
+  if (!anonymousId) {
+    anonymousId = `anon_${Math.random().toString(36).substr(2, 9)}`
+    localStorage.setItem("cio_anonymous_id", anonymousId)
   }
-  ;(window as any)._cio.track(eventName, data)
+
+  try {
+    await fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "track",
+        anonymousId,
+        event: eventName,
+        properties: data,
+        timestamp: Math.floor(Date.now() / 1000),
+      }),
+    })
+  } catch (error) {
+    console.error("[v0] Failed to track event:", error)
+  }
 }
 
 // Server-side API calls for campaigns and transactional messages
