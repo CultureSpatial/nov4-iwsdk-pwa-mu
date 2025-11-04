@@ -1,19 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { trackPWAInstalled, trackExperienceStarted, SessionTracker, getDeviceInfo } from "@/lib/analytics"
-import { Camera, Wine, Scan, Activity, Presentation, TestTube } from "lucide-react"
+import { Camera, Wine, Scan, Activity, Presentation, TestTube, Download, AlertCircle } from "lucide-react"
 
 export default function LandingPage() {
+  const searchParams = useSearchParams()
   const [sessionTracker] = useState(() => new SessionTracker())
   const [deviceInfo, setDeviceInfo] = useState<{
     platform: string
     webxrSupported: boolean
   } | null>(null)
+  const [showPWAPrompt, setShowPWAPrompt] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+
+  const utmCampaign = searchParams.get("utm_campaign")
+  const utmSource = searchParams.get("utm_source")
+  const utmMedium = searchParams.get("utm_medium")
+  const sceneRoute = searchParams.get("scene")
 
   useEffect(() => {
     // Detect device capabilities
@@ -23,16 +33,71 @@ export default function LandingPage() {
       webxrSupported: info.webxrSupported,
     })
 
-    // Track PWA installation
+    if (utmCampaign || utmSource || utmMedium) {
+      console.log("[v0] UTM tracking:", { utmCampaign, utmSource, utmMedium })
+      sessionTracker.recordInteraction("utm_landing", {
+        campaign: utmCampaign,
+        source: utmSource,
+        medium: utmMedium,
+      })
+    }
+
+    if (sceneRoute) {
+      console.log("[v0] Deep-link routing to scene:", sceneRoute)
+      const sceneMap: Record<string, string> = {
+        photo_booth: "/ar/photo-booth",
+        cocktails: "/ar/cocktails",
+        scan: "/ar/scan",
+        iwsdk: "/ar/iwsdk",
+        mr_demo: "/mr-demo",
+      }
+      const targetRoute = sceneMap[sceneRoute]
+      if (targetRoute) {
+        // Delay navigation to allow analytics to fire
+        setTimeout(() => {
+          window.location.href = targetRoute
+        }, 500)
+      }
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      // Show PWA prompt for mobile devices
+      if (info.platform === "iOS" || info.platform === "Android") {
+        setShowPWAPrompt(true)
+      }
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", () => {
       trackPWAInstalled()
+      setShowPWAPrompt(false)
     })
 
-    // Cleanup session on unmount
     return () => {
       sessionTracker.endSession()
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     }
-  }, [sessionTracker])
+  }, [sessionTracker, utmCampaign, utmSource, utmMedium, sceneRoute])
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) {
+      // iOS fallback instructions
+      if (deviceInfo?.platform === "iOS") {
+        alert(
+          'To install this app on iOS:\n1. Tap the Share button\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"',
+        )
+      }
+      return
+    }
+
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    console.log("[v0] PWA install outcome:", outcome)
+    setDeferredPrompt(null)
+    setShowPWAPrompt(false)
+  }
 
   const handleStartExperience = (type: "webxr" | "2d_fallback") => {
     trackExperienceStarted(type)
@@ -41,10 +106,41 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-emerald-900 to-black text-white">
-      {/* Removed Navigation component since it's now in layout.tsx */}
-
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto space-y-8">
+          {showPWAPrompt && (
+            <Alert className="bg-emerald-800 border-emerald-600">
+              <Download className="h-4 w-4" />
+              <AlertDescription className="text-white">
+                <div className="flex items-center justify-between">
+                  <span>Install this app for the best experience</span>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleInstallPWA} className="bg-emerald-600 hover:bg-emerald-700">
+                      Install
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowPWAPrompt(false)}
+                      className="text-white hover:bg-emerald-700"
+                    >
+                      Later
+                    </Button>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {utmCampaign && (
+            <Alert className="bg-emerald-900/50 border-emerald-700">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-emerald-100">
+                Welcome from campaign: <strong>{utmCampaign}</strong>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Header */}
           <div className="text-center space-y-4">
             <h1 className="text-5xl font-bold text-balance">Cultural Hospitality AR Pilot</h1>
@@ -72,6 +168,11 @@ export default function LandingPage() {
                     {deviceInfo.webxrSupported ? "Supported" : "Not Supported"}
                   </Badge>
                 </div>
+                {!deviceInfo.webxrSupported && (
+                  <p className="text-sm text-emerald-300 mt-2">
+                    WebXR not available. You'll see 2D fallback experiences.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

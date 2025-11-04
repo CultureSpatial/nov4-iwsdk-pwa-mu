@@ -18,6 +18,7 @@ import {
   Store,
   Calendar,
   Hand,
+  ClipboardCheck,
 } from "lucide-react"
 
 const routes = [
@@ -28,6 +29,7 @@ const routes = [
   { name: "AR Scan", path: "/ar/scan", icon: Scan },
   { name: "IWSDK Demo", path: "/ar/iwsdk", icon: Activity },
   { name: "Presenter Dashboard", path: "/presenter", icon: Presentation },
+  { name: "Event Runbook", path: "/runbook", icon: ClipboardCheck }, // Added Runbook page for day-of operations
   { name: "ACE Workflow", path: "/ace", icon: Activity },
   { name: "IWSDK Tests", path: "/test/iwsdk", icon: TestTube },
   { name: "Influencer Kit", path: "/influencer", icon: Users },
