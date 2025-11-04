@@ -73,30 +73,38 @@ export function PhotoCapture({ mode }: PhotoCaptureProps) {
       const blob = await (await fetch(capturedPhoto)).blob()
       const file = new File([blob], "wicked-photo.png", { type: "image/png" })
 
-      // Check if share is available and supported
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "My Wicked Photo",
-          text: "Check out my photo from the Emerald City!",
-        })
-        trackEvent("share_clicked", { method: "native", feature: "photo_booth" })
-      } else {
-        // Fallback to download if share is not available
-        const link = document.createElement("a")
-        link.href = capturedPhoto
-        link.download = "wicked-photo.png"
-        link.click()
-        trackEvent("share_clicked", { method: "download", feature: "photo_booth" })
+      const isInIframe = window.self !== window.top
+      const hasShareAPI = typeof navigator.share === "function"
+
+      console.log("[v0] Share capability check:", { isInIframe, hasShareAPI })
+
+      // Only attempt native share if not in iframe and API exists
+      if (!isInIframe && hasShareAPI) {
+        try {
+          // Check if we can share files
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "My Wicked Photo",
+              text: "Check out my photo from the Emerald City!",
+            })
+            trackEvent("share_clicked", { method: "native", feature: "photo_booth" })
+            return
+          }
+        } catch (shareError) {
+          console.log("[v0] Share not available, falling back to download:", shareError)
+        }
       }
-    } catch (error) {
-      console.error("Share failed:", error)
-      // Fallback to download on error
+
+      // Fallback to download (primary method in iframe/preview environments)
       const link = document.createElement("a")
       link.href = capturedPhoto
       link.download = "wicked-photo.png"
       link.click()
-      trackEvent("share_error", { error: String(error), fallback: "download" })
+      trackEvent("share_clicked", { method: "download", feature: "photo_booth" })
+    } catch (error) {
+      console.error("[v0] Share/download failed:", error)
+      trackEvent("share_error", { error: String(error) })
     }
   }, [capturedPhoto])
 
