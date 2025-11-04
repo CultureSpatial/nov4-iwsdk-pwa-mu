@@ -12,15 +12,16 @@ export function CameraPassthrough({ onReady, onError }: CameraPassthroughProps) 
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
     let stream: MediaStream | null = null
+    mountedRef.current = true
 
     const startCamera = async () => {
       try {
         console.log("[v0] Requesting camera access for passthrough")
 
-        // Request camera with AR-optimized constraints
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: "environment", // Use back camera on mobile
@@ -31,11 +32,22 @@ export function CameraPassthrough({ onReady, onError }: CameraPassthroughProps) 
           audio: false,
         })
 
-        if (videoRef.current) {
+        if (videoRef.current && mountedRef.current) {
           videoRef.current.srcObject = stream
-          videoRef.current.play()
+
+          try {
+            await videoRef.current.play()
+          } catch (playError) {
+            if ((playError as Error).name !== "AbortError") {
+              throw playError
+            }
+            console.log("[v0] Video play interrupted (expected during navigation)")
+            return
+          }
 
           videoRef.current.onloadedmetadata = () => {
+            if (!mountedRef.current) return
+
             console.log("[v0] Camera passthrough ready")
             setIsReady(true)
             trackEvent("camera_passthrough_started", {
@@ -46,6 +58,8 @@ export function CameraPassthrough({ onReady, onError }: CameraPassthroughProps) 
           }
         }
       } catch (err) {
+        if (!mountedRef.current) return
+
         const error = err as Error
         console.error("[v0] Camera passthrough failed:", error)
         setError(error.message)
@@ -57,6 +71,8 @@ export function CameraPassthrough({ onReady, onError }: CameraPassthroughProps) 
     startCamera()
 
     return () => {
+      mountedRef.current = false
+
       if (stream) {
         stream.getTracks().forEach((track) => track.stop())
         console.log("[v0] Camera passthrough stopped")
