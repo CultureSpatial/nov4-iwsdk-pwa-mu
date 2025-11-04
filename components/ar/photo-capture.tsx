@@ -73,16 +73,30 @@ export function PhotoCapture({ mode }: PhotoCaptureProps) {
       const blob = await (await fetch(capturedPhoto)).blob()
       const file = new File([blob], "wicked-photo.png", { type: "image/png" })
 
-      if (navigator.share) {
+      // Check if share is available and supported
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "My Wicked Photo",
           text: "Check out my photo from the Emerald City!",
         })
         trackEvent("share_clicked", { method: "native", feature: "photo_booth" })
+      } else {
+        // Fallback to download if share is not available
+        const link = document.createElement("a")
+        link.href = capturedPhoto
+        link.download = "wicked-photo.png"
+        link.click()
+        trackEvent("share_clicked", { method: "download", feature: "photo_booth" })
       }
     } catch (error) {
       console.error("Share failed:", error)
+      // Fallback to download on error
+      const link = document.createElement("a")
+      link.href = capturedPhoto
+      link.download = "wicked-photo.png"
+      link.click()
+      trackEvent("share_error", { error: String(error), fallback: "download" })
     }
   }, [capturedPhoto])
 
