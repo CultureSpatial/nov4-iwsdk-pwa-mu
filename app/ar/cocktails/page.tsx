@@ -40,14 +40,22 @@ export default function CocktailsPage() {
   const [sessionStarted, setSessionStarted] = useState(false)
 
   useEffect(() => {
-    if ("xr" in navigator) {
-      navigator.xr?.isSessionSupported("immersive-ar").then((supported) => {
-        setIsXRSupported(supported)
-        trackEvent("cocktail_menu_loaded", { xr_supported: supported })
-      })
-    } else {
-      setIsXRSupported(false)
+    const checkXRSupport = async () => {
+      try {
+        if ("xr" in navigator) {
+          const supported = await navigator.xr?.isSessionSupported("immersive-ar")
+          setIsXRSupported(supported || false)
+          trackEvent("cocktail_menu_loaded", { xr_supported: supported })
+        } else {
+          setIsXRSupported(false)
+        }
+      } catch (error) {
+        console.log("[v0] XR check failed:", error)
+        setIsXRSupported(false)
+        trackEvent("cocktail_menu_loaded", { xr_supported: false, error: "permissions" })
+      }
     }
+    checkXRSupport()
   }, [])
 
   const handleCocktailSelect = (cocktail: (typeof cocktails)[0]) => {

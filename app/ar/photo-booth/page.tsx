@@ -12,16 +12,23 @@ export default function PhotoBoothPage() {
   const [sessionStarted, setSessionStarted] = useState(false)
 
   useEffect(() => {
-    // Check WebXR support
-    if ("xr" in navigator) {
-      navigator.xr?.isSessionSupported("immersive-ar").then((supported) => {
-        setIsXRSupported(supported)
-        trackEvent("photo_booth_loaded", { xr_supported: supported })
-      })
-    } else {
-      setIsXRSupported(false)
-      trackEvent("photo_booth_loaded", { xr_supported: false })
+    const checkXRSupport = async () => {
+      try {
+        if ("xr" in navigator) {
+          const supported = await navigator.xr?.isSessionSupported("immersive-ar")
+          setIsXRSupported(supported || false)
+          trackEvent("photo_booth_loaded", { xr_supported: supported })
+        } else {
+          setIsXRSupported(false)
+          trackEvent("photo_booth_loaded", { xr_supported: false })
+        }
+      } catch (error) {
+        console.log("[v0] XR check failed:", error)
+        setIsXRSupported(false)
+        trackEvent("photo_booth_loaded", { xr_supported: false, error: "permissions" })
+      }
     }
+    checkXRSupport()
   }, [])
 
   const handleStartSession = () => {

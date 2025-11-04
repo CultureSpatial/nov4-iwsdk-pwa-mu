@@ -10,12 +10,18 @@ export function UniversalARScene() {
   const [isARActive, setIsARActive] = useState(false)
 
   useEffect(() => {
-    // Check for AR support
-    if (typeof navigator !== "undefined" && "xr" in navigator) {
-      navigator.xr?.isSessionSupported("immersive-ar").then((supported) => {
-        setIsARSupported(supported)
-      })
+    const checkARSupport = async () => {
+      try {
+        if (typeof navigator !== "undefined" && "xr" in navigator) {
+          const supported = await navigator.xr?.isSessionSupported("immersive-ar")
+          setIsARSupported(supported || false)
+        }
+      } catch (error) {
+        console.log("[v0] XR check failed (likely permissions policy):", error)
+        setIsARSupported(false)
+      }
     }
+    checkARSupport()
   }, [])
 
   const startAR = async () => {
