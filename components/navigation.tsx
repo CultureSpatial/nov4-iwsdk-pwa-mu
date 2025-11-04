@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Menu, Home, Camera, Wine, Users, TestTube, Presentation, Activity, Scan, Store, Calendar } from "lucide-react"
@@ -22,9 +23,10 @@ const routes = [
 
 export function Navigation() {
   const pathname = usePathname()
+  const [open, setOpen] = useState(false)
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
           variant="outline"
@@ -46,6 +48,7 @@ export function Navigation() {
             return (
               <Link key={route.path} href={route.path}>
                 <Button
+                  onClick={() => setOpen(false)}
                   variant={isActive ? "default" : "ghost"}
                   className={`w-full justify-start ${
                     isActive ? "bg-emerald-600 hover:bg-emerald-700" : "hover:bg-emerald-900/50 text-emerald-100"
