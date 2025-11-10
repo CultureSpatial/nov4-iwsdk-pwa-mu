@@ -1,241 +1,216 @@
-# Emerald Gem - Project Specification
+# Emerald Gem AR Platform - Project Specification
 
-**Project:** Cultural Hospitality AR Platform
-**Competition:** Meta Horizon Start Developer Competition 2025
-**Launch:** Royal Sonesta Seattle - December 15, 2025
-**Spec Version:** 1.0
+## Vision
 
-## Executive Summary
+Transform hospitality experiences through immersive AR/VR technology that bridges physical venues with digital engagement, creating memorable customer interactions while driving measurable business outcomes.
 
-The Emerald Gem platform transforms luxury hotel experiences through immersive AR/VR try-on flows, enabling guests to preview and order signature cocktails, capture branded photo moments, and engage with venue-specific content across Web PWA, Meta Horizon VR, and mobile AR platforms.
+## Target Launch
+
+- **Competition Deadline:** December 9, 2025 (Meta Horizon Start Developer Competition)
+- **Customer Launch:** December 15, 2025 (Royal Sonesta Seattle)
+- **Platform:** Multi-platform (Web PWA, Mobile AR, Meta Horizon VR)
 
 ## User Journeys
 
-### Journey 1: Guest Onboarding (Mobile Web)
-**Persona:** Hotel guest with smartphone in lobby/room
-**Goal:** Quick discovery and engagement with AR experiences
+### Journey 1: Guest AR Experience (Primary)
 
-1. Guest scans QR code from lobby display or in-room card
-2. Landing page detects device capabilities (iOS/Android/Quest)
-3. Auto-routes to appropriate platform:
-   - iOS → Universal AR (Mattercraft/Zappar)
-   - Android → WebXR native
-   - Quest → IWSDK VR mode
-4. One-tap "Start Experience" (no app install)
-5. Camera permission prompt with clear value prop
-6. Emerald glow entry animation plays
+**Actor:** Hotel guest or venue visitor
 
-**Success Metrics:**
-- QR scan → AR launch < 15 seconds
-- Camera permission acceptance > 75%
-- Session completion > 60%
-
-### Journey 2: Virtual Cocktail Try-On (AR)
-**Persona:** Guest exploring cocktail menu
-**Goal:** Preview drinks before ordering via front-facing camera
-
-1. Front-facing camera activates automatically
-2. Cocktail carousel displays 6 signature drinks
-3. User selects drink card
-4. 3D cocktail glass appears in AR at mouth level
-5. Face tracking positions glass naturally (60fps)
-6. User can:
-   - Rotate/zoom cocktail visualization
-   - View ingredients & allergens
-   - Add to order queue
-   - Capture photo with drink overlay
-7. Tavus.io AI avatar explains drink origin/flavor profile
-8. "Order Now" button sends to kitchen/bar via integrated POS
+**Flow:**
+1. Guest scans physical "Emerald Gem" (QR code/NFC tag) at venue
+2. Web PWA loads instantly on their mobile device
+3. Front-facing camera activates (60fps optimized)
+4. Guest sees AR photo booth with themed frames/filters
+5. Guest views cocktail menu with 3D drink visualizations in AR
+6. Guest captures photo with AR filter, shares to social media
+7. Guest orders cocktail through AR interface
+8. Analytics tracks engagement, conversion, and revenue
 
 **Success Metrics:**
-- Try-on → Order conversion > 35%
-- Average drinks previewed: 3.2
-- Photo capture rate > 50%
+- 70%+ scan-to-engagement rate
+- 30%+ photo capture rate
+- 15%+ cocktail order conversion
+- < 3 second AR initialization time
+- 60fps camera performance on 80%+ devices
 
-### Journey 3: Photo Booth with Branded Frames
-**Persona:** Guest wanting social shareable content
-**Goal:** Create memorable branded photos with AR effects
+### Journey 2: VR Immersive Experience (Competition Focus)
 
-1. Access "Photo Moment" from main menu
-2. Select from 4 venue-themed frames:
-   - Emerald City skyline
-   - Luxury hotel branding
-   - Event-specific overlay
-   - Seasonal theme
-3. Front camera shows live preview with frame
-4. Apply filters (optional): glow, sparkle, color grading
-5. Capture photo with tap or voice command
-6. Immediate preview with edit options
-7. Share flow:
-   - Instagram Stories (direct)
-   - Download to camera roll
-   - Email to self
-   - QR code for desktop transfer
-8. Customer.io captures event for follow-up marketing
+**Actor:** Meta Quest user or Instagram/Facebook mobile user
+
+**Flow:**
+1. User discovers Horizon world via Instagram/Facebook promotion
+2. Launches on Quest VR headset OR mobile device
+3. Enters virtual lounge environment themed to venue
+4. Interacts with VR photo booth using passthrough camera
+5. Views 3D cocktail models in immersive space
+6. Captures VR selfie with AI-enhanced filters
+7. Receives QR code to visit physical venue
+8. Cross-platform analytics tracks VR→venue conversion
 
 **Success Metrics:**
-- Photo capture → Share rate > 40%
-- Social media mentions +285%
-- Email capture rate for follow-up: 55%
+- 1000+ Horizon world visits by Dec 9
+- 40%+ mobile-to-VR conversion rate
+- 5%+ VR→physical venue visit rate
+- Qualifies for Passthrough Camera + AI special award
 
-### Journey 4: VR Station Demo (Meta Quest)
-**Persona:** Event attendee at hotel demo station
-**Goal:** Immersive brand experience in VR environment
+### Journey 3: Venue Staff Operations
 
-1. Staff helps guest don Quest headset
-2. Auto-launches Emerald Gem world
-3. Spawns in branded virtual lobby
-4. Hand tracking tutorial (5 seconds)
-5. Interactive elements:
-   - Virtual cocktail bar with 3D models
-   - Photo booth portal
-   - Event space previews
-   - Menu browsing in 3D space
-6. Passthrough mode for hybrid AR/VR
-7. Session auto-ends after 3 minutes
-8. QR code displayed in headset to continue on mobile
+**Actor:** Hotel staff, bar staff, venue manager
+
+**Flow:**
+1. Staff accesses analytics dashboard
+2. Views real-time engagement metrics
+3. Sees cocktail order queue from AR interface
+4. Fulfills orders with kitchen/bar integration
+5. Monitors guest satisfaction and conversion rates
+6. Generates reports for management
 
 **Success Metrics:**
-- VR demo → Mobile conversion > 30%
-- Average session time: 2.5 min
-- Follow-up inquiry rate: 25%
+- < 30 second staff onboarding time
+- Real-time order notifications
+- 95%+ order fulfillment rate
+- Daily/weekly automated reports
 
-### Journey 5: Competition Submission (Developer)
-**Persona:** Meta Horizon Start Program member
-**Goal:** Submit polished experience to competition
+## Key Features
 
-1. Review spec-kit documentation
-2. Verify eligibility requirements
-3. Complete technical checklist:
-   - ✓ Passthrough Camera Access implementation
-   - ✓ Hand Interactions in VR mode
-   - ✓ AI integration (Tavus.io)
-   - ✓ Mobile optimization (60fps target)
-   - ✓ Cross-platform compatibility
-4. Package submission materials:
-   - Demo video (2 min)
-   - Technical architecture doc
-   - Live deployment URL
-   - Meta Horizon world link
-5. Submit via Devpost before Dec 9
-6. Monitor for judging updates
+### Web PWA (Foundation - Complete)
 
-**Success Metrics:**
-- Submission completeness: 100%
-- Category fit: Lifestyle + Special Awards
-- Live customer deployment: Royal Sonesta
+1. **Front-Facing Camera System**
+   - 60fps target with auto-fallback (60fps → 30fps → basic)
+   - Progressive quality degradation
+   - Performance monitoring
+   - Cross-browser compatibility (iOS Safari, Chrome, Firefox)
 
-## Desired Outcomes
+2. **AR Photo Booth**
+   - Multiple themed frames/filters
+   - Real-time face tracking
+   - Instant preview
+   - Social sharing (download, Instagram, Facebook)
+   - Analytics tracking per filter
 
-### Business Outcomes
-1. **Revenue Impact:** 285% increase in cocktail sales at launch venue
-2. **Customer Acquisition:** 500+ email captures in first 30 days
-3. **Brand Awareness:** 10,000+ social media impressions
-4. **Competition Win:** Top 3 in Lifestyle Track or Special Award ($50K-$100K prize)
-5. **Expansion:** 3 additional hotel contracts Q1 2026
+3. **AR Cocktail Menu**
+   - 3D drink models with WebGL/Three.js
+   - Interactive rotation and zoom
+   - Ingredient information overlay
+   - Price display
+   - "Order Now" CTA with analytics
 
-### Technical Outcomes
-1. **Performance:** 60fps camera tracking on flagship devices
-2. **Reliability:** 99.5% uptime during launch period
-3. **Compatibility:** Works on 95%+ of mobile devices (iOS/Android)
-4. **Scalability:** Handle 200 concurrent users per venue
-5. **Analytics:** Real-time event tracking to Amplitude + Customer.io
+4. **Analytics Integration**
+   - Dual stack: Amplitude (product) + Customer.io (marketing)
+   - Cross-platform event tracking
+   - User identification and segmentation
+   - Conversion funnel analysis
+   - Revenue attribution
 
-### User Experience Outcomes
-1. **Engagement:** Average session time > 3 minutes
-2. **Conversion:** Try-on → Order rate > 35%
-3. **Satisfaction:** NPS score > 8/10
-4. **Virality:** 40% of users share photo content
-5. **Retention:** 20% return within 7 days
+### Meta Horizon (Transmutation - In Progress)
+
+1. **VR Lounge Environment**
+   - Themed to Royal Sonesta aesthetic
+   - Passthrough camera integration
+   - Hand interaction controls
+   - Mobile + VR support
+
+2. **Asset Bridge**
+   - Sync 3D models between web and Horizon
+   - Unified content management
+   - Cross-platform state sync
+
+3. **VR Photo Booth**
+   - Passthrough camera with AI filters
+   - VR selfie capture
+   - Social sharing from VR
+
+### Intersection Layer (Stabilization)
+
+1. **Cross-Platform Analytics**
+   - Unified event taxonomy
+   - Platform detection (web/mobile/VR)
+   - User journey tracking across platforms
+
+2. **Asset Management**
+   - Shared 3D model library
+   - Automated format conversion
+   - Version control
+
+3. **State Synchronization**
+   - User preferences across platforms
+   - Order history
+   - Photo gallery
 
 ## Technical Constraints
 
-### Platform Requirements
-- **Web PWA:** Next.js 16, React 19.2, TypeScript
-- **AR Frameworks:** IWSDK, Universal AR SDK, WebXR
-- **Analytics:** Amplitude (product) + Customer.io (marketing)
-- **AI/Video:** Tavus.io for avatar content
-- **Camera:** Front-facing 60fps minimum
-- **Deployment:** Vercel with GitHub integration
+### Must Have
+- Next.js 16 + React 19.2
+- TypeScript
+- Vercel deployment
+- Mobile-first responsive design
+- < 3s initial load time
+- WCAG 2.1 AA accessibility
+- HTTPS only
 
-### Device Support Matrix
-| Platform | Technology | Support Level |
-|----------|-----------|---------------|
-| iOS Safari | Universal AR (Zappar) | Priority 1 |
-| Android Chrome | WebXR native | Priority 1 |
-| Meta Quest 3/3S | IWSDK + Horizon | Priority 2 |
-| Desktop | WebXR fallback | Priority 3 |
+### Performance Targets
+- 60fps camera on flagship devices (iPhone 14+, Pixel 7+)
+- 30fps minimum on mid-range devices
+- < 100ms interaction latency
+- Lighthouse score > 90
 
-### Performance Budgets
-- Initial page load: < 3 seconds
-- Time to interactive: < 5 seconds
-- Camera initialization: < 2 seconds
-- AR frame rate: 60fps (degrade to 30fps gracefully)
-- Bundle size: < 2MB (excluding 3D assets)
-- 3D asset loading: Progressive/lazy
+### Browser Support
+- iOS Safari 16+
+- Chrome 120+
+- Firefox 120+
+- Edge 120+
 
-### Security & Privacy
-- Camera access with explicit permission
-- No persistent video recording
-- GDPR-compliant data collection
-- SOC 2 Type II hosting (Vercel)
-- Customer.io data encryption at rest
-
-### Integration Points
-- Hotel POS system (REST API)
-- Customer.io Pipeline API
-- Amplitude SDK (client + server)
-- Tavus.io video API
-- Meta Horizon Creator Program APIs
-
-## Timeline & Milestones
-
-### Phase 1: Pre-Competition (Nov 20 - Dec 9)
-- Week 1: Camera system hardening + front-facing optimization
-- Week 2: Horizon world build + asset sync via intersection layer
-- Week 3: Competition submission package + demo video
-
-### Phase 2: Soft Launch (Dec 10 - Dec 14)
-- Final QA on target devices
-- Staff training at Royal Sonesta
-- Customer.io campaign setup
-- Analytics validation
-
-### Phase 3: Launch (Dec 15)
-- Go-live at Royal Sonesta Seattle
-- Real-time monitoring dashboard
-- Support team on standby
-- Social media amplification
-
-### Phase 4: Scale (Dec 16 - Jan 31)
-- Performance optimization based on live data
-- Additional venue onboarding
-- Competition judging period
-- Feature iteration based on customer feedback
+### Platform Support
+- Web PWA (all modern browsers)
+- Meta Horizon VR (Quest 3, Quest 3S)
+- Meta Horizon Mobile (iOS + Android)
 
 ## Success Criteria
 
-### MVP Launch (Dec 15)
-- [ ] Camera system operational 99.5%+ uptime
-- [ ] All 4 user journeys functional
-- [ ] Analytics pipeline capturing events
-- [ ] 50+ guest interactions Day 1
-- [ ] Zero critical bugs
+### Competition (Dec 9)
+- [ ] Functional Horizon world build
+- [ ] Mobile AR companion experience
+- [ ] Passthrough camera + AI demonstration
+- [ ] Documentation and demo video
+- [ ] Submission completed
 
-### Competition Submission (Dec 9)
-- [ ] Devpost submission complete
-- [ ] Demo video showcases all features
-- [ ] Live deployment URL accessible
-- [ ] Technical documentation comprehensive
-- [ ] Eligibility verified (MHCP member)
+### Launch (Dec 15)
+- [ ] Web PWA deployed to production
+- [ ] Royal Sonesta venue setup complete
+- [ ] Staff trained
+- [ ] Analytics dashboard live
+- [ ] 50+ guest interactions on day 1
 
-### 30-Day Post-Launch
-- [ ] 500+ unique users
-- [ ] 285% cocktail sales increase
-- [ ] 40% photo share rate
-- [ ] 8+ NPS score
-- [ ] 3 new hotel contracts in pipeline
+### Business (3 months post-launch)
+- [ ] 285% ROI (Digital Royal Wardrobe model)
+- [ ] 1000+ unique users
+- [ ] 500+ cocktail orders via AR
+- [ ] 5000+ photo captures
+- [ ] 80%+ guest satisfaction score
 
----
+## Out of Scope (V1)
 
-**Next:** See TECHNICAL_PLAN.md for implementation architecture
+- Payment processing (manual order fulfillment)
+- User accounts / authentication
+- Multi-venue deployment
+- Native mobile apps
+- AR try-on for physical products beyond cocktails
+- Advanced AI features (recommendation engine, personalization)
+
+## Risks & Mitigation
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Camera permission denial | Medium | High | Clear permission prompts, fallback to menu-only mode |
+| Poor WiFi at venue | Medium | High | Aggressive caching, offline mode, venue WiFi audit |
+| Competition deadline missed | Low | Medium | Prioritize proof-of-concept over polish |
+| Launch deadline missed | Low | Critical | Daily standup, P0 focus, feature freeze Dec 10 |
+| Low user adoption | Medium | High | Staff training, QR code placement, guest incentives |
+
+## Dependencies
+
+- Amplitude account (product analytics)
+- Customer.io account (marketing automation)
+- Vercel account (hosting)
+- Meta Horizon Start Program membership (competition)
+- Royal Sonesta partnership (venue access)

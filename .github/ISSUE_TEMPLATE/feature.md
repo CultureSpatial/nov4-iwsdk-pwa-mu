@@ -1,13 +1,16 @@
 ---
 name: Feature Request
-about: Propose a new feature for the Emerald Gem platform
+about: Propose new functionality for the Emerald Gem AR Platform
 title: '[FEATURE] '
-labels: feature
+labels: ['enhancement', 'needs-triage']
 assignees: ''
 ---
 
-## Description
-Brief description of the feature
+## Feature Description
+Brief description of the proposed feature.
+
+## User Story
+As a [user type], I want to [action] so that [benefit].
 
 ## Track
 - [ ] Web PWA
@@ -17,32 +20,45 @@ Brief description of the feature
 - [ ] Infrastructure
 - [ ] Analytics
 
-## User Story
-As a [type of user], I want [goal] so that [benefit]
+## Requirements
+- [ ] Requirement 1
+- [ ] Requirement 2
+- [ ] Requirement 3
 
-## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
+## Platform
+- [ ] Web PWA (React/Next.js)
+- [ ] Mobile AR (Universal AR SDK)
+- [ ] Meta Horizon VR
+- [ ] Desktop
+- [ ] All platforms
 
-## Technical Notes
-Implementation details, dependencies, risks
+## Success Criteria
+How do we know this feature is complete and working?
+- [ ] Criteria 1
+- [ ] Criteria 2
 
-## Design/Mockups
-Link to designs or attach screenshots
-
-## Testing Plan
-How to verify this works
+## Technical Considerations
+- Dependencies: [list any dependencies]
+- Performance impact: [expected impact]
+- Security considerations: [any security implications]
+- Analytics tracking: [events to track]
 
 ## Priority
-- [ ] P0-Critical (Blocks launch)
-- [ ] P1-High (Important for launch)
-- [ ] P2-Medium (Nice to have)
-- [ ] P3-Low (Future enhancement)
+- [ ] P0 - Critical (launch blocker)
+- [ ] P1 - High (competition/key feature)
+- [ ] P2 - Medium (enhancement)
+- [ ] P3 - Low (nice-to-have)
 
-## Estimated Size
-Story points: [1, 2, 3, 5, 8]
+## Deadline
+- [ ] Dec 9 (Competition)
+- [ ] Dec 15 (Royal Sonesta Launch)
+- [ ] Q1 2026
+- [ ] No specific deadline
+
+## Design/Mockups
+[Attach designs, wireframes, or reference links]
 
 ## Related Issues
-- Issue #
-- Issue #
+- Related to #
+- Blocks #
+- Blocked by #

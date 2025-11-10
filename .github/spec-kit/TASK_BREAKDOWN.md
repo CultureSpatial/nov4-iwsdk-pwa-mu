@@ -1,441 +1,613 @@
-# Emerald Gem - Task Breakdown
+# Emerald Gem AR Platform - Task Breakdown
 
-**Based on:** PROJECT_SPEC.md + TECHNICAL_PLAN.md
-**Sprint:** Pre-Competition (Nov 20 - Dec 9, 2025)
-**Methodology:** Spec-driven development with AI coding agents
+## Priority Legend
+- **P0:** Critical (launch blockers)
+- **P1:** High (competition, key features)
+- **P2:** Medium (enhancements)
+- **P3:** Low (nice-to-have)
 
-## Task Priority Matrix
-
-| Priority | Category | Task Count | Deadline |
-|----------|----------|------------|----------|
-| P0 (Critical) | Camera + Competition | 5 | Dec 2 |
-| P1 (High) | Horizon + Analytics | 4 | Dec 6 |
-| P2 (Medium) | Polish + Docs | 3 | Dec 9 |
-| P3 (Low) | Future enhancements | 3 | Post-launch |
-
----
-
-## P0 Tasks (Critical - Dec 2 Deadline)
-
-### Task 1: Camera System Hardening
-**Status:** In Progress
-**Assignee:** AI Agent + Developer Review
-**Estimated Time:** 8 hours
-
-**Description:**
-Ensure front-facing camera system meets 60fps performance target with robust error handling for try-on flows.
-
-**Acceptance Criteria:**
-- [ ] 60fps achieved on iPhone 13+ and Galaxy S21+
-- [ ] Graceful degradation to 30fps on older devices
-- [ ] < 2 second initialization time (p95)
-- [ ] Camera permission acceptance rate > 75%
-- [ ] Auto-retry logic with exponential backoff
-- [ ] Performance metrics logged to Amplitude
-
-**Implementation Steps:**
-1. Review existing `lib/camera-manager.ts`
-2. Add performance monitoring hooks
-3. Implement progressive fallback (60→30→basic fps)
-4. Add user-friendly error messages for all failure modes
-5. Test on 5 target devices (iOS/Android mix)
-
-**Files to Modify:**
-- `lib/camera-manager.ts` - Core logic
-- `components/camera/camera-feed.tsx` - UI component
-- `docs/CAMERA_ARCHITECTURE.md` - Documentation
-
-**Testing:**
-\`\`\`bash
-# Manual test on devices
-iPhone 13 Pro (iOS 17)
-Galaxy S23 (Android 14)
-Pixel 7 (Android 13)
-iPhone 11 (iOS 16) # Older device test
-Galaxy S20 (Android 12) # Older device test
-\`\`\`
+## Status Legend
+- **✅ Done:** Completed and deployed
+- **🚧 In Progress:** Currently being worked on
+- **📋 Ready:** Ready to start
+- **⏸️ Blocked:** Waiting on dependencies
 
 ---
 
-### Task 2: Competition Submission Package
-**Status:** Not Started
-**Assignee:** Developer
-**Estimated Time:** 6 hours
+## Track 1: Web PWA (Foundation)
+
+### Task 1.1: Camera System [P0] ✅
+**Status:** Done
+**Owner:** Primary Development
+**Story Points:** 8 (XL)
 
 **Description:**
-Prepare all materials for Meta Horizon Start Developer Competition submission.
+Implement robust front-facing camera system with progressive fallback and performance monitoring.
 
 **Acceptance Criteria:**
-- [ ] 2-minute demo video showcasing all features
-- [ ] Devpost submission form completed
-- [ ] Live deployment URL (vercel.app)
-- [ ] Technical architecture document (PDF)
-- [ ] Meta Horizon world published and linked
-- [ ] Eligibility verified (MHCP membership confirmed)
+- [x] getUserMedia() implementation with error handling
+- [x] Progressive fallback: 60fps → 30fps → basic
+- [x] Retry logic with exponential backoff
+- [x] Performance monitoring (FPS, latency, dropped frames)
+- [x] Camera switch capability (front/back)
+- [x] Analytics integration (camera lifecycle events)
 
-**Deliverables:**
-1. **Demo Video (2 min):**
-   - 0:00-0:15: Problem statement (luxury hotel engagement)
-   - 0:15-0:45: Cocktail try-on demo (front camera)
-   - 0:45-1:15: Photo booth + social sharing
-   - 1:15-1:30: VR station demo (Quest 3)
-   - 1:30-2:00: Impact metrics + CTA
-
-2. **Technical Doc (PDF):**
-   - System architecture diagram
-   - Technology stack breakdown
-   - Passthrough Camera implementation details
-   - AI integration (Tavus.io)
-   - Performance metrics
-   - Scalability approach
-
-3. **Live URLs:**
-   - Web PWA: https://emeraldgem.vercel.app
-   - GitHub: https://github.com/CultureSpatial/emerald-gem
-   - Meta Horizon World: [TBD - publish world]
-
-**Files to Create:**
-- `docs/COMPETITION_SUBMISSION.md`
-- `assets/demo-video.mp4`
-- `assets/technical-doc.pdf`
+**Files:**
+- `lib/camera-manager.ts`
+- `components/camera/camera-feed.tsx`
+- `docs/CAMERA_ARCHITECTURE.md`
 
 ---
 
-### Task 3: Horizon World MVP Build
-**Status:** Not Started
-**Assignee:** Developer (Horizon Desktop Editor)
-**Estimated Time:** 12 hours
+### Task 1.2: AR Photo Booth [P0] ✅
+**Status:** Done (Mock implementation, needs real filters)
+**Owner:** AR Development
+**Story Points:** 5 (L)
 
 **Description:**
-Build minimal viable world in Meta Horizon Desktop Editor with cocktail bar and photo booth.
+Build AR photo booth with filters, capture, and social sharing.
 
 **Acceptance Criteria:**
-- [ ] World loads on Quest 3 in < 5 seconds
-- [ ] 3 signature cocktails as 3D models
-- [ ] Interactive photo booth portal
-- [ ] Hand tracking for object interaction
-- [ ] Passthrough mode enabled
-- [ ] Analytics events POST to web API
-- [ ] QR code to mobile experience
+- [x] Camera feed integration
+- [ ] AR filter overlay system
+- [ ] Photo capture functionality
+- [ ] Download + social sharing
+- [ ] Analytics tracking per filter
+- [ ] Mobile-optimized UI
 
-**Gizmo Structure:**
-\`\`\`
-Emerald Gem World/
-├── Spawn Point (entry)
-├── Lobby Area
-│   ├── Welcome Text Gizmo
-│   ├── Tutorial UI Panel
-│   └── Navigation Menu
-├── Cocktail Bar
-│   ├── Bar Counter (3D model)
-│   ├── Cocktail Display Pedestals (x3)
-│   │   ├── Emerald Mule (GLB)
-│   │   ├── Royal Fizz (GLB)
-│   │   └── Sapphire Sour (GLB)
-│   ├── Info Panels (Text Gizmos)
-│   └── Order Button (UI Gizmo)
-├── Photo Booth Portal
-│   ├── Frame Display (x4)
-│   ├── Capture Trigger (Code Block)
-│   └── Share QR Gizmo
-└── Analytics Script (TypeScript)
-    ├── Track VR sessions
-    ├── Track interactions
-    └── POST to web API
-\`\`\`
+**Files:**
+- `app/ar/photo-booth/page.tsx`
+- `components/ar/photo-capture.tsx`
+- `lib/ar-filters.ts` (needs creation)
 
-**TypeScript Scripts:**
-- `VRAnalyticsScript.ts` - Event tracking
-- `CocktailInteractionScript.ts` - Hand tracking
-- `PhotoBoothScript.ts` - Capture logic
-
-**Assets Required:**
-- 3x cocktail GLB models → Convert to FBX
-- 4x photo frame textures
-- Brand logo textures
-- Ambient audio
+**Remaining Work:**
+- Implement real AR filters (face tracking, overlay)
+- Social sharing API integration
+- Filter selection UI
 
 ---
 
-### Task 4: Analytics Pipeline Validation
-**Status:** In Progress
-**Assignee:** AI Agent
-**Estimated Time:** 4 hours
+### Task 1.3: Cocktail Menu AR [P0] 📋
+**Status:** Ready
+**Owner:** 3D Development
+**Story Points:** 5 (L)
 
 **Description:**
-Verify dual analytics pipeline (Amplitude + Customer.io) correctly tracks all events from all platforms.
+3D cocktail visualization with WebGL/Three.js in AR space.
 
 **Acceptance Criteria:**
-- [ ] All preset events appear in Amplitude dashboard
-- [ ] All events flow to Customer.io Pipeline
-- [ ] VR events from Horizon POST successfully
-- [ ] No duplicate events
-- [ ] Event properties schema validated
-- [ ] User identification working (anonymous → identified)
+- [ ] Three.js scene setup
+- [ ] GLTF model loading and rendering
+- [ ] AR placement and interaction (rotate, zoom)
+- [ ] Cocktail data API integration
+- [ ] "Order Now" CTA with analytics
+- [ ] Performance optimization (< 30ms frame time)
 
-**Test Matrix:**
-| Event | Web | Mobile | VR | Amplitude | Customer.io |
-|-------|-----|--------|-----|-----------|-------------|
-| ar_session_start | ✓ | ✓ | ✓ | ✓ | ✓ |
-| camera_initialized | ✓ | ✓ | ✗ | ✓ | ✓ |
-| cocktail_viewed | ✓ | ✓ | ✓ | ✓ | ✓ |
-| photo_captured | ✓ | ✓ | ✓ | ✓ | ✓ |
-| order_placed | ✓ | ✓ | ✓ | ✓ | ✓ |
+**Files:**
+- `app/ar/cocktails/page.tsx`
+- `components/ar/cocktail-viewer.tsx`
+- `lib/three-scene.ts`
+- `app/api/cocktails/route.ts`
 
-**Files to Review:**
+**Dependencies:**
+- 3D cocktail models (GLTF format)
+- Cocktail data structure
+
+---
+
+### Task 1.4: Analytics Integration [P0] ✅
+**Status:** Done
+**Owner:** Data Team
+**Story Points:** 3 (M)
+
+**Description:**
+Dual analytics stack with Amplitude and Customer.io.
+
+**Acceptance Criteria:**
+- [x] Amplitude SDK initialization
+- [x] Customer.io CDP integration via /api/track
+- [x] Unified trackEvent() function
+- [x] Cross-platform event taxonomy
+- [x] User identification flow
+- [x] Error handling and retry logic
+
+**Files:**
 - `lib/analytics.ts`
 - `app/api/track/route.ts`
+- `app/layout-client.tsx`
 - `docs/DUAL_ANALYTICS_STRATEGY.md`
 
 ---
 
-### Task 5: Environment Variables Setup
-**Status:** Blocked
-**Assignee:** Developer (manual Vercel config)
-**Estimated Time:** 1 hour
+### Task 1.5: Photo Upload & Storage [P1] 📋
+**Status:** Ready
+**Owner:** Backend Development
+**Story Points:** 3 (M)
 
 **Description:**
-Configure correct environment variable names in Vercel dashboard.
-
-**Required Variables:**
-\`\`\`bash
-# Client-side (NEXT_PUBLIC_*)
-NEXT_PUBLIC_AMPLITUDE_API_KEY=[from Amplitude dashboard]
-NEXT_PUBLIC_CUSTOMERIO_SITE_ID=[from Customer.io]
-NEXT_PUBLIC_EVENT_NAME="Royal Sonesta Seattle Soft Launch"
-NEXT_PUBLIC_EVENT_DATE="2025-12-15"
-
-# Server-side (no prefix)
-CUSTOMERIO_API_KEY=[from Customer.io - KEEP SECRET]
-
-# Optional features (toggle)
-NEXT_PUBLIC_ENABLE_PHOTO_BOOTH=true
-NEXT_PUBLIC_ENABLE_COCKTAIL_MENU=true
-NEXT_PUBLIC_ENABLE_POLLS=false
-NEXT_PUBLIC_ENABLE_QA=false
-\`\`\`
-
-**Action:**
-1. Developer logs into Vercel dashboard
-2. Navigate to Project Settings → Environment Variables
-3. Add all variables above
-4. Trigger redeploy
-5. Verify in preview deployment
-
----
-
-## P1 Tasks (High Priority - Dec 6 Deadline)
-
-### Task 6: Asset Pipeline Automation
-**Status:** Not Started
-**Assignee:** AI Agent
-**Estimated Time:** 6 hours
-
-**Description:**
-Automate asset conversion and sync between Web PWA and Horizon world.
+Upload captured AR photos to cloud storage with sharing URLs.
 
 **Acceptance Criteria:**
-- [ ] GLB → FBX conversion on asset upload
-- [ ] Automatic CDN deployment (Vercel Blob)
-- [ ] Horizon world manifest auto-updates
-- [ ] Dashboard shows sync status
-- [ ] Rollback capability for bad assets
+- [ ] /api/photos/upload endpoint
+- [ ] Cloud storage integration (Vercel Blob or S3)
+- [ ] Image optimization (resize, compress)
+- [ ] Generate shareable URLs
+- [ ] Analytics tracking (upload success/failure)
 
-**Implementation:**
-\`\`\`typescript
-// intersection/asset-bridge.ts enhancements
-- Add GLB → FBX converter (WASM library)
-- Implement webhook for asset changes
-- Create sync queue with retry logic
-- Add dashboard UI for monitoring
-\`\`\`
+**Files:**
+- `app/api/photos/upload/route.ts`
+- `lib/photo-storage.ts`
+
+**Integration Options:**
+- Vercel Blob (recommended, easiest)
+- AWS S3 + CloudFront
+- Cloudinary
 
 ---
 
-### Task 7: Dashboard Enhancements
-**Status:** In Progress
-**Assignee:** AI Agent
-**Estimated Time:** 4 hours
+## Track 2: Meta Horizon (Transmutation)
+
+### Task 2.1: Horizon World Base Environment [P1] 📋
+**Status:** Ready
+**Owner:** VR Development
+**Story Points:** 8 (XL)
 
 **Description:**
-Improve `/dashboard` with real-time metrics for launch day monitoring.
+Create Horizon world with Royal Sonesta-themed lounge environment.
 
 **Acceptance Criteria:**
-- [ ] Live user count (WebSocket or polling)
-- [ ] Camera success/failure rate (realtime)
-- [ ] Order conversion funnel visualization
-- [ ] Platform breakdown (iOS/Android/VR)
-- [ ] Alert thresholds with notifications
+- [ ] World created in Horizon Desktop Editor
+- [ ] Environment design (lounge aesthetic)
+- [ ] Mobile + VR support enabled
+- [ ] Basic navigation and interactions
+- [ ] Published to Horizon catalog
 
-**New Metrics:**
-- Active sessions (last 5 min)
-- Camera init success rate (%)
-- Try-on → Order conversion (%)
-- Photo share rate (%)
-- Average session duration (seconds)
+**Tools:**
+- Horizon Desktop Editor
+- 3D modeling software (Blender recommended)
+
+**Resources:**
+- Royal Sonesta brand guidelines
+- Reference photos of venue
 
 ---
 
-### Task 8: Error Recovery UX
-**Status:** Not Started
-**Assignee:** AI Agent
-**Estimated Time:** 3 hours
+### Task 2.2: Passthrough Camera Integration [P1] 📋
+**Status:** Ready (Requires Quest 3/3S hardware)
+**Owner:** VR Development
+**Story Points:** 5 (L)
 
 **Description:**
-Add user-friendly error recovery flows for common failure modes.
+Implement passthrough camera for VR photo booth experience.
 
 **Acceptance Criteria:**
-- [ ] Camera permission denied → Inline instructions
-- [ ] Network error → Retry button + offline mode
-- [ ] Asset load failure → Fallback placeholders
-- [ ] Analytics failure → Silent fallback (no user impact)
+- [ ] Passthrough Camera API integration
+- [ ] Camera permission flow in VR
+- [ ] Real-time camera feed rendering
+- [ ] Photo capture in VR
+- [ ] Analytics tracking
+
+**API Requirements:**
+- Horizon OS v74+
+- Quest 3 or Quest 3S device
+- "horizonos.permission.HEADSET_CAMERA" permission
+
+**Files:**
+- Horizon TypeScript scripts
+- Gizmo components for camera UI
 
 ---
 
-### Task 9: Mobile Optimization Pass
-**Status:** Not Started
-**Assignee:** AI Agent
-**Estimated Time:** 5 hours
+### Task 2.3: VR Photo Booth Gizmos [P1] 📋
+**Status:** Ready (Blocked by 2.2)
+**Owner:** VR Development
+**Story Points:** 5 (L)
 
 **Description:**
-Optimize for mobile performance and battery life.
+Build UI gizmos for VR photo booth (buttons, frames, sharing).
 
 **Acceptance Criteria:**
-- [ ] Lazy load 3D assets (progressive)
-- [ ] Reduce bundle size < 2MB
-- [ ] Battery drain < 15%/hour
-- [ ] Works on 3G (600kbps)
-- [ ] Lighthouse score > 90
+- [ ] UI panel for photo booth controls
+- [ ] Filter selection gizmo
+- [ ] Capture button gizmo
+- [ ] Preview panel gizmo
+- [ ] Share/download functionality
+- [ ] Hand interaction support
+
+**Dependencies:**
+- Task 2.2 (Passthrough Camera)
 
 ---
 
-## P2 Tasks (Medium Priority - Dec 9 Deadline)
-
-### Task 10: Documentation Completeness
-**Status:** In Progress
-**Assignee:** AI Agent
-**Estimated Time:** 3 hours
+### Task 2.4: Horizon Analytics Bridge [P1] 📋
+**Status:** Ready
+**Owner:** Integration Team
+**Story Points:** 3 (M)
 
 **Description:**
-Ensure all documentation is complete for competition judges and future developers.
+Connect Horizon world events to web analytics pipeline.
 
-**Checklist:**
-- [x] PROJECT_SPEC.md
-- [x] TECHNICAL_PLAN.md
-- [x] TASK_BREAKDOWN.md
-- [x] CAMERA_ARCHITECTURE.md
-- [x] DUAL_ANALYTICS_STRATEGY.md
-- [ ] API_DOCUMENTATION.md
-- [ ] DEPLOYMENT_GUIDE.md
-- [ ] TROUBLESHOOTING.md
+**Acceptance Criteria:**
+- [ ] TypeScript fetch() to /api/track
+- [ ] Event tracking from Horizon scripts
+- [ ] Player ID as userId
+- [ ] Platform detection (platform: 'horizon')
+- [ ] Error handling and retry
+
+**Files:**
+- Horizon TypeScript scripts
+- `intersection/event-bridge.ts` (web side)
+
+**Example Events:**
+- `horizon_world_entered`
+- `horizon_interaction`
+- `photo_captured` (from VR)
 
 ---
 
-### Task 11: Social Sharing Optimization
-**Status:** Not Started
-**Assignee:** AI Agent
-**Estimated Time:** 4 hours
+## Track 3: Competition (Meta Horizon Start)
+
+### Task 3.1: Join Meta Horizon Start Program [P0] 📋
+**Status:** Ready (User action required)
+**Owner:** Project Lead
+**Story Points:** 1 (XS)
 
 **Description:**
-Optimize photo sharing flow for maximum virality.
+Apply and get accepted to Meta Horizon Start Program.
 
-**Features:**
-- [ ] Instagram Stories direct integration
-- [ ] Auto-hashtag suggestions (#EmeraldGem, #RoyalSonesta)
-- [ ] QR code for desktop transfer
-- [ ] Email-to-self option
-- [ ] Analytics on share completion
+**Acceptance Criteria:**
+- [ ] Application submitted
+- [ ] Approval received
+- [ ] Account credentials configured
+
+**Timeline:**
+- Submit by Dec 4 (allows 3-5 day approval buffer)
+
+**Link:** https://developer.meta.com/horizon/start
 
 ---
 
-### Task 12: Staff Training Materials
-**Status:** Not Started
-**Assignee:** Developer
-**Estimated Time:** 2 hours
+### Task 3.2: Demo Video Production [P1] 📋
+**Status:** Ready (Blocked by 2.1, 2.2)
+**Owner:** Marketing/Video Team
+**Story Points:** 3 (M)
 
 **Description:**
-Create training guide for Royal Sonesta staff.
+Create < 3 min demo video showcasing Passthrough Camera + AI innovation.
 
-**Deliverables:**
-- PDF guide with screenshots
-- Video walkthrough (5 min)
-- Troubleshooting FAQ
-- Contact info for tech support
+**Acceptance Criteria:**
+- [ ] Script written
+- [ ] Footage captured (VR, mobile, web)
+- [ ] Editing and post-production
+- [ ] Voice-over and captions
+- [ ] < 3 minutes duration
+- [ ] Uploaded to YouTube/Vimeo
+
+**Key Highlights:**
+- Front-facing camera innovation
+- Cross-platform experience (VR + mobile + web)
+- Royal Sonesta deployment
+- Business ROI model
+
+**Dependencies:**
+- Task 2.1 (Horizon world)
+- Task 2.2 (Passthrough camera)
 
 ---
 
-## P3 Tasks (Low Priority - Post-Launch)
-
-### Task 13: Tavus.io AI Avatar Integration
-**Status:** Future
-**Estimated Time:** 8 hours
+### Task 3.3: Technical Documentation [P1] 📋
+**Status:** Ready (Partially done)
+**Owner:** Documentation Team
+**Story Points:** 2 (S)
 
 **Description:**
-Add AI-generated avatar videos explaining cocktails.
+Write technical documentation for competition submission.
+
+**Acceptance Criteria:**
+- [ ] Architecture diagram
+- [ ] README with setup instructions
+- [ ] Innovation highlights writeup
+- [ ] API documentation
+- [ ] Deployment guide
+
+**Files:**
+- `README.md` (update)
+- `docs/ARCHITECTURE.md` (create)
+- `docs/COMPETITION_SUBMISSION.md` (create)
+
+**Status:**
+- ✅ DUAL_ANALYTICS_STRATEGY.md
+- ✅ CAMERA_ARCHITECTURE.md
+- ✅ META_HORIZON_CHALLENGE_STRATEGY.md
+- [ ] Final competition-specific docs
 
 ---
 
-### Task 14: Multi-Language Support
-**Status:** Future
-**Estimated Time:** 6 hours
+### Task 3.4: Competition Submission Form [P0] 📋
+**Status:** Ready (Dec 8-9)
+**Owner:** Project Lead
+**Story Points:** 1 (XS)
 
 **Description:**
-i18n for English, Spanish, Japanese.
+Complete and submit Devpost competition form.
+
+**Acceptance Criteria:**
+- [ ] All form fields completed
+- [ ] Demo video linked
+- [ ] Horizon world URL provided
+- [ ] Technical docs linked
+- [ ] Submitted before Dec 9 11:59 PM
+
+**Deadline:** December 9, 2025
 
 ---
 
-### Task 15: Advanced Analytics Dashboard
-**Status:** Future
-**Estimated Time:** 10 hours
+## Track 4: Launch Operations (Royal Sonesta)
+
+### Task 4.1: Venue WiFi Audit [P0] 📋
+**Status:** Ready
+**Owner:** Operations Team
+**Story Points:** 2 (S)
 
 **Description:**
-Build admin dashboard for hotel managers.
+Test and optimize venue WiFi for AR experience.
+
+**Acceptance Criteria:**
+- [ ] WiFi speed test at multiple venue locations
+- [ ] Coverage map created
+- [ ] Bandwidth requirements documented
+- [ ] Recommendations for venue IT team
+- [ ] Load testing (simulate 50+ concurrent users)
+
+**Minimum Requirements:**
+- 10 Mbps per device
+- < 50ms latency
+- 95%+ coverage in guest areas
 
 ---
 
-## Task Dependencies
+### Task 4.2: Physical Gem Deployment [P0] 📋
+**Status:** Ready
+**Owner:** Operations Team
+**Story Points:** 2 (S)
 
-\`\`\`mermaid
-graph TD
-    T1[Task 1: Camera] --> T3[Task 3: Horizon World]
-    T1 --> T2[Task 2: Competition]
-    T4[Task 4: Analytics] --> T2
-    T5[Task 5: Env Vars] --> T4
-    T5 --> T1
-    T3 --> T6[Task 6: Asset Pipeline]
-    T4 --> T7[Task 7: Dashboard]
-    T1 --> T8[Task 8: Error Recovery]
-    T1 --> T9[Task 9: Mobile Optimization]
-    T2 --> T10[Task 10: Documentation]
-    T9 --> T11[Task 11: Social Sharing]
-    T10 --> T12[Task 12: Training Materials]
-\`\`\`
+**Description:**
+Create and deploy physical "Emerald Gems" (QR codes/NFC tags).
 
----
+**Acceptance Criteria:**
+- [ ] QR code design (branded, clear CTA)
+- [ ] NFC tag programming (if applicable)
+- [ ] Placement strategy (high-traffic areas)
+- [ ] Print and mount physical gems
+- [ ] Test scans from guest devices
 
-## GitHub Issues Integration
-
-**How to use this breakdown:**
-
-1. Each task = 1 GitHub Issue
-2. Use labels: `priority:P0`, `track:competition`, `track:camera`, etc.
-3. Link to spec files in issue description
-4. Add to GitHub Projects board
-5. AI agent picks up tasks from board
-
-**Example Issue Template:**
-\`\`\`markdown
-**Spec Reference:** .github/spec-kit/TASK_BREAKDOWN.md - Task 1
-**Priority:** P0
-**Track:** Camera
-**Estimated Time:** 8 hours
-
-[Copy acceptance criteria from above]
-
-**Implementation Notes:**
-[AI agent fills this in during execution]
-\`\`\`
+**Locations:**
+- Hotel lobby
+- Bar area
+- Restaurant tables
+- Guest rooms (optional)
 
 ---
 
-**Status:** 5/15 tasks complete | 10 tasks remaining | Dec 9 deadline
+### Task 4.3: Staff Training Materials [P0] 📋
+**Status:** Ready
+**Owner:** Operations Team
+**Story Points:** 2 (S)
+
+**Description:**
+Create training materials for venue staff.
+
+**Acceptance Criteria:**
+- [ ] Quick-start guide (< 1 page)
+- [ ] Video tutorial (< 5 min)
+- [ ] Troubleshooting checklist
+- [ ] FAQ document
+- [ ] Practice session scheduled
+
+**Topics:**
+- How to scan gem
+- How to use AR features
+- Common guest questions
+- Technical troubleshooting
+- Order fulfillment process
+
+---
+
+### Task 4.4: Launch Day Monitoring [P0] 📋
+**Status:** Ready (Dec 15)
+**Owner:** Full Team
+**Story Points:** 3 (M)
+
+**Description:**
+Monitor and support launch day operations.
+
+**Acceptance Criteria:**
+- [ ] Real-time dashboard monitoring
+- [ ] On-site technical support
+- [ ] Guest feedback collection
+- [ ] Issue tracking and rapid response
+- [ ] Post-launch debrief
+
+**Schedule:**
+- Pre-launch checks (Dec 14)
+- Launch day support (Dec 15, 8am-11pm)
+- Post-launch review (Dec 16)
+
+---
+
+## Track 5: Infrastructure
+
+### Task 5.1: Environment Variable Setup [P0] 📋
+**Status:** Ready (User action required)
+**Owner:** DevOps
+**Story Points:** 1 (XS)
+
+**Description:**
+Configure environment variables in Vercel.
+
+**Acceptance Criteria:**
+- [ ] Amplitude API key added
+- [ ] Customer.io credentials added
+- [ ] Feature flags configured
+- [ ] Event metadata set
+- [ ] Verified in deployed preview
+
+**Variables:**
+- NEXT_PUBLIC_AMPLITUDE_API_KEY
+- CUSTOMERIO_API_KEY
+- NEXT_PUBLIC_CUSTOMERIO_SITE_ID
+- NEXT_PUBLIC_EVENT_NAME
+- NEXT_PUBLIC_EVENT_DATE
+
+---
+
+### Task 5.2: Error Monitoring [P1] 📋
+**Status:** Ready
+**Owner:** DevOps
+**Story Points:** 2 (S)
+
+**Description:**
+Set up error tracking and alerting.
+
+**Acceptance Criteria:**
+- [ ] Error tracking service integrated (Sentry recommended)
+- [ ] Alert rules configured
+- [ ] Slack/email notifications
+- [ ] Error dashboard accessible
+
+**Integration Options:**
+- Sentry (recommended)
+- Vercel built-in monitoring
+- Rollbar
+
+---
+
+### Task 5.3: Performance Monitoring [P2] 📋
+**Status:** Ready
+**Owner:** DevOps
+**Story Points:** 2 (S)
+
+**Description:**
+Set up performance monitoring and optimization.
+
+**Acceptance Criteria:**
+- [ ] Lighthouse CI in GitHub Actions
+- [ ] Web Vitals tracking
+- [ ] Performance budget alerts
+- [ ] Regular performance audits
+
+**Metrics:**
+- LCP < 2.5s
+- FID < 100ms
+- CLS < 0.1
+- Camera FPS > 30
+
+---
+
+## Track 6: Analytics & Optimization
+
+### Task 6.1: Analytics Dashboard [P1] 📋
+**Status:** Partially done (needs real data)
+**Owner:** Data Team
+**Story Points:** 3 (M)
+
+**Description:**
+Build analytics dashboard for venue managers.
+
+**Acceptance Criteria:**
+- [ ] Real-time metrics display
+- [ ] Conversion funnel visualization
+- [ ] Platform comparison (web/mobile/VR)
+- [ ] Revenue tracking
+- [ ] Export reports functionality
+
+**Files:**
+- `app/dashboard/page.tsx` (exists, needs enhancement)
+
+**Metrics:**
+- DAU/MAU
+- Scan-to-engagement rate
+- Photo capture rate
+- Cocktail order conversion
+- Revenue per user
+
+---
+
+### Task 6.2: Conversion Funnel Optimization [P2] ⏸️
+**Status:** Blocked (needs launch data)
+**Owner:** Data Team
+**Story Points:** 3 (M)
+
+**Description:**
+Analyze and optimize conversion funnels post-launch.
+
+**Acceptance Criteria:**
+- [ ] Funnel analysis in Amplitude
+- [ ] Drop-off point identification
+- [ ] A/B test hypotheses
+- [ ] Optimization experiments
+- [ ] ROI improvement tracking
+
+**Timeline:**
+- Start 1 week post-launch (Dec 22)
+
+**Dependencies:**
+- Task 4.4 (Launch data collection)
+
+---
+
+## Summary
+
+### By Priority
+
+**P0 (Critical):**
+- 1.1 Camera System ✅
+- 1.2 AR Photo Booth ✅ (needs real filters)
+- 1.3 Cocktail Menu AR 📋
+- 1.4 Analytics Integration ✅
+- 3.1 Join Meta Horizon Start 📋
+- 3.4 Competition Submission 📋
+- 4.1 Venue WiFi Audit 📋
+- 4.2 Physical Gem Deployment 📋
+- 4.3 Staff Training 📋
+- 4.4 Launch Day Monitoring 📋
+- 5.1 Environment Variables 📋
+
+**P1 (High):**
+- 1.5 Photo Upload 📋
+- 2.1 Horizon World 📋
+- 2.2 Passthrough Camera 📋
+- 2.3 VR Photo Booth 📋
+- 2.4 Horizon Analytics 📋
+- 3.2 Demo Video 📋
+- 3.3 Technical Docs 📋
+- 5.2 Error Monitoring 📋
+- 6.1 Analytics Dashboard 📋
+
+**P2 (Medium):**
+- 5.3 Performance Monitoring 📋
+- 6.2 Conversion Optimization ⏸️
+
+### By Status
+
+- ✅ Done: 3 tasks
+- 🚧 In Progress: 0 tasks
+- 📋 Ready: 18 tasks
+- ⏸️ Blocked: 1 task
+
+### Critical Path to Dec 9
+
+1. Join Meta Horizon Start (Task 3.1) - **Start immediately**
+2. Horizon World Base (Task 2.1) - **5 days**
+3. Passthrough Camera (Task 2.2) - **3 days**
+4. Demo Video (Task 3.2) - **2 days**
+5. Competition Submission (Task 3.4) - **Dec 9**
+
+### Critical Path to Dec 15
+
+1. Cocktail Menu AR (Task 1.3) - **3 days**
+2. Photo Upload (Task 1.5) - **2 days**
+3. Venue WiFi Audit (Task 4.1) - **1 day**
+4. Physical Gem Deployment (Task 4.2) - **2 days**
+5. Staff Training (Task 4.3) - **1 day**
+6. Launch Day Monitoring (Task 4.4) - **Dec 15**

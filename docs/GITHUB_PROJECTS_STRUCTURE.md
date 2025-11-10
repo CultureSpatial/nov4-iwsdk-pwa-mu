@@ -2,541 +2,304 @@
 
 ## Overview
 
-Comprehensive GitHub Projects structure for managing 6 parallel development tracks toward December 9 competition deadline and December 15 Royal Sonesta soft launch.
-
-## 🤖 Spec-Driven Development with GitHub Spec Kit
-
-This project uses **GitHub Spec Kit** methodology to enable AI-assisted systematic development through structured specifications.
-
-### Four-Phase Workflow
-
-**Phase 1: Specify**
-- Define high-level user journeys and outcomes
-- Document success criteria and milestones
-- Maintain living contract in PROJECT_SPEC.md
-
-**Phase 2: Plan**  
-- Technical architecture and stack decisions
-- API contracts and data models
-- Performance targets and constraints
-
-**Phase 3: Tasks**
-- Break specs into granular, reviewable tasks
-- Map dependencies and priorities
-- Estimate story points for velocity
-
-**Phase 4: Implement**
-- AI agents execute from task breakdown
-- Developers review focused changes
-- GitHub Projects tracks cross-track progress
-
-### Integration with GitHub Projects
-
-Spec Kit tasks map directly to GitHub Issues:
-- Each task becomes a tracked issue
-- Issues link back to spec documents
-- Progress visible in Timeline View
-- Automation moves cards through workflow
-
-### Using with AI (v0)
-
-Reference specs when requesting work:
-- "Implement camera fallback per TECHNICAL_PLAN.md Section 3.2"
-- "Update PROJECT_SPEC.md with new Tavus.io integration"
-- "Complete TASK-005 from competition track breakdown"
-
-This ensures AI-generated code aligns with documented architecture and requirements.
+This repository uses GitHub Projects to manage the Emerald Gem AR Platform development across 6 parallel tracks, aligned with the December 9 Meta Horizon Start Developer Competition deadline and December 15 Royal Sonesta launch.
 
 ## Project Board Structure
 
-### Board 1: 🚀 Emerald Gem Launch (Main)
+### Board: Emerald Gem AR Platform
 
-**View Type:** Board with Status columns
+**Views:**
+1. **Sprint Board** - Kanban by status (Backlog, Ready, In Progress, Review, Done)
+2. **Track View** - Grouped by development track
+3. **Timeline** - Gantt chart view by milestone
+4. **Priority Matrix** - 2x2 matrix (Impact vs Effort)
 
-**Columns:**
-- 📋 Backlog
-- 🎯 Ready
-- 🔨 In Progress
-- 👀 Review
-- ✅ Done
-- 🚫 Blocked
+### Development Tracks
 
-**Custom Fields:**
-- **Track** (Single Select): Web PWA, Meta Horizon, Competition, Launch Ops, Infrastructure, Analytics
-- **Priority** (Single Select): P0-Critical, P1-High, P2-Medium, P3-Low
-- **Deadline** (Date): Track deadline dependencies
-- **Size** (Number): Story points (1, 2, 3, 5, 8)
-- **Platform** (Multi-Select): Web, Mobile, VR, Desktop
+#### Track 1: Web PWA (Foundation)
+- Status: Active - Production Ready
+- Owner: Primary Development
+- Tech: Next.js 16, React 19, WebXR, IWSDK, Universal AR SDK
+- Priority: P0 - Critical for Dec 15 launch
 
----
+**Key Components:**
+- Front-facing camera system (60fps, auto-fallback)
+- AR photo booth with filters
+- Cocktail menu with 3D visualization
+- Analytics integration (Amplitude + Customer.io)
+- Progressive Web App deployment
 
-### Board 2: 📅 Timeline View
+#### Track 2: Meta Horizon (Transmutation)
+- Status: Planning - Competition Focus
+- Owner: VR Development
+- Tech: Horizon Desktop Editor, TypeScript Gizmos
+- Priority: P1 - Competition entry
 
-**View Type:** Roadmap (Timeline)
+**Key Components:**
+- VR world environment
+- Mobile AR companion experience
+- Asset bridge to web PWA
+- Gizmo mappings from React components
+- Cross-platform analytics
 
-**Swimlanes by Track:**
-1. Web PWA Track
-2. Meta Horizon Track  
-3. Competition Track (Dec 9)
-4. Launch Ops Track (Dec 15)
-5. Infrastructure Track
-6. Analytics Track
+#### Track 3: Competition (Meta Horizon Start)
+- Status: Active - Dec 9 Deadline
+- Owner: Competition Team
+- Track: Lifestyle + Passthrough Camera/AI Special Award
+- Prize: Share of $1.5M
 
-**Milestones:**
-- Dec 3: Competition submission draft complete
-- Dec 9: Meta Horizon Start Competition deadline
-- Dec 13: Royal Sonesta dry run
-- Dec 15: Royal Sonesta soft launch
-- Q1 2026: Next Meta competition
+**Submission Requirements:**
+- Proof-of-concept Horizon world
+- Mobile AR experience
+- Documentation and demo video
+- Technical architecture explanation
+- Customer deployment proof (Royal Sonesta)
 
----
+#### Track 4: Launch Operations (Royal Sonesta)
+- Status: Active - Dec 15 Deadline
+- Owner: Operations Team
+- Venue: Royal Sonesta Seattle
+- Priority: P0 - Revenue Critical
 
-## Track Breakdown
+**Launch Checklist:**
+- Venue WiFi testing and optimization
+- Staff training materials
+- Guest onboarding flow
+- QR code/NFC gem deployment
+- Analytics dashboard for venue managers
+- Support escalation process
 
-### 🌐 Web PWA Track
+#### Track 5: Infrastructure
+- Status: Ongoing
+- Owner: DevOps
+- Platform: Vercel + Next.js
+- Priority: P1
 
-**Epic Issues:**
+**Components:**
+- Vercel deployment pipeline
+- Environment variable management
+- Analytics integration (Amplitude, Customer.io)
+- Performance monitoring
+- Error tracking and alerts
+- Database connections (if needed)
 
-1. **Camera System Hardening**
-   - [ ] Front-facing camera fallback testing
-   - [ ] Performance monitoring (60fps target)
-   - [ ] Multi-device compatibility matrix
-   - [ ] Error recovery UI polish
-   - Labels: `web`, `P0-critical`, `camera`
+#### Track 6: Analytics & Optimization
+- Status: Active
+- Owner: Data Team
+- Tools: Amplitude, Customer.io
+- Priority: P1
 
-2. **AR Try-On Experience**
-   - [ ] Cocktail menu 3D models
-   - [ ] Photo booth frame overlays
-   - [ ] Glinda avatar integration
-   - [ ] Emerald glow effects
-   - Labels: `web`, `P1-high`, `ar-experience`
-
-3. **Analytics Integration**
-   - [ ] Amplitude SDK configuration
-   - [ ] Customer.io webhook testing
-   - [ ] Dashboard real-time monitoring
-   - [ ] Cross-platform event unification
-   - Labels: `web`, `P1-high`, `analytics`
-
-4. **PWA Installation Flow**
-   - [ ] QR code onboarding
-   - [ ] Deep-link routing
-   - [ ] Add to Home Screen prompts
-   - [ ] Offline fallback
-   - Labels: `web`, `P2-medium`, `pwa`
-
----
-
-### 🥽 Meta Horizon Track
-
-**Epic Issues:**
-
-1. **Horizon World Setup**
-   - [ ] Join Meta Horizon Start Program
-   - [ ] Desktop Editor installation
-   - [ ] Project scaffolding
-   - [ ] Publishing pipeline
-   - Labels: `horizon`, `P1-high`, `setup`
-
-2. **Asset Transmutation**
-   - [ ] 3D model conversion (GLB→FBX)
-   - [ ] Texture optimization
-   - [ ] Audio asset preparation
-   - [ ] Upload to Asset Library
-   - Labels: `horizon`, `P1-high`, `assets`
-
-3. **TypeScript Gizmo Implementation**
-   - [ ] Cocktail carousel script
-   - [ ] Photo capture script
-   - [ ] Analytics event tracking
-   - [ ] UI panels + input handling
-   - Labels: `horizon`, `P0-critical`, `scripting`
-
-4. **Intersection Layer**
-   - [ ] State sync mechanism
-   - [ ] Event bridge to Customer.io
-   - [ ] Asset pipeline monitoring
-   - [ ] Cross-platform testing
-   - Labels: `horizon`, `P1-high`, `integration`
-
----
-
-### 🏆 Competition Track (Dec 9 Deadline)
-
-**Epic Issues:**
-
-1. **Submission Requirements**
-   - [ ] Join Meta Horizon Start Program (URGENT)
-   - [ ] Build demo video (3-5 min)
-   - [ ] Write project description
-   - [ ] Document special features (Passthrough Camera + AI)
-   - Labels: `competition`, `P0-critical`, `documentation`
-
-2. **Demo Polish**
-   - [ ] Lifestyle Track positioning
-   - [ ] Passthrough Camera showcase
-   - [ ] Tavus.io AI integration demo
-   - [ ] User flow documentation
-   - Labels: `competition`, `P0-critical`, `demo`
-
-3. **Competitive Positioning**
-   - [ ] Highlight hotel/hospitality use case
-   - [ ] Emphasize multi-platform strategy
-   - [ ] Show customer validation (Dec 15 launch)
-   - [ ] Document technical innovation
-   - Labels: `competition`, `P1-high`, `strategy`
-
----
-
-### 🏨 Launch Ops Track (Dec 15 Deadline)
-
-**Epic Issues:**
-
-1. **Royal Sonesta Preparation**
-   - [ ] Device procurement/testing
-   - [ ] Network/WiFi validation
-   - [ ] Staff training materials
-   - [ ] Backup procedures
-   - Labels: `launch`, `P0-critical`, `operations`
-
-2. **Day-Of Runbook**
-   - [ ] Setup checklist
-   - [ ] Troubleshooting guide
-   - [ ] Recovery procedures
-   - [ ] Contact escalation
-   - Labels: `launch`, `P0-critical`, `documentation`
-
-3. **Customer Success**
-   - [ ] Onboarding flow testing
-   - [ ] Feedback collection mechanism
-   - [ ] Success metrics dashboard
-   - [ ] Post-event analysis plan
-   - Labels: `launch`, `P1-high`, `customer-success`
-
----
-
-### ⚙️ Infrastructure Track
-
-**Epic Issues:**
-
-1. **Deployment Pipeline**
-   - [ ] Vercel production config
-   - [ ] Environment variable management
-   - [ ] GitHub Actions CI/CD
-   - [ ] Monitoring/alerting
-   - Labels: `infrastructure`, `P1-high`, `devops`
-
-2. **Performance Optimization**
-   - [ ] Bundle size analysis
-   - [ ] Image optimization
-   - [ ] API response caching
-   - [ ] CDN configuration
-   - Labels: `infrastructure`, `P2-medium`, `performance`
-
----
-
-### 📊 Analytics Track
-
-**Epic Issues:**
-
-1. **Unified Analytics**
-   - [ ] Amplitude configuration
-   - [ ] Customer.io Pipeline API
-   - [ ] Dashboard integration
-   - [ ] Cross-platform event taxonomy
-   - Labels: `analytics`, `P1-high`, `tracking`
-
-2. **Monitoring & Observability**
-   - [ ] Error tracking (Sentry/similar)
-   - [ ] Performance monitoring
-   - [ ] User session replay
-   - [ ] A/B testing framework
-   - Labels: `analytics`, `P2-medium`, `monitoring`
-
----
+**Metrics:**
+- User engagement (DAU/MAU)
+- Conversion funnels (scan → view → order)
+- Platform comparison (web vs mobile vs VR)
+- Venue-specific performance
+- ROI tracking (285% target)
 
 ## Issue Templates
 
-### Template 1: Feature Issue
-
-\`\`\`markdown
-## Description
-Brief description of the feature
-
-## Track
-- [ ] Web PWA
-- [ ] Meta Horizon
-- [ ] Competition
-- [ ] Launch Ops
-- [ ] Infrastructure
-- [ ] Analytics
-
-## Acceptance Criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
-## Technical Notes
-Implementation details, dependencies, risks
-
-## Testing Plan
-How to verify this works
-
-## Labels
-`track-name`, `priority`, `platform`
+### Feature Request (.github/ISSUE_TEMPLATE/feature.md)
+\`\`\`yaml
+name: Feature Request
+about: Propose new functionality
+title: '[FEATURE] '
+labels: ['enhancement', 'needs-triage']
+assignees: ''
 \`\`\`
 
-### Template 2: Bug Report
-
-\`\`\`markdown
-## Bug Description
-What's broken?
-
-## Steps to Reproduce
-1. Step 1
-2. Step 2
-3. Step 3
-
-## Expected Behavior
-What should happen
-
-## Actual Behavior
-What actually happens
-
-## Environment
-- Platform: Web/Mobile/VR
-- Device: 
-- Browser/OS:
-- Version:
-
-## Screenshots/Logs
-Attach evidence
-
-## Priority
-- [ ] P0-Critical (Blocks launch)
-- [ ] P1-High
-- [ ] P2-Medium
-- [ ] P3-Low
-
-## Labels
-`bug`, `track-name`, `priority`
+### Bug Report (.github/ISSUE_TEMPLATE/bug.md)
+\`\`\`yaml
+name: Bug Report
+about: Report an issue
+title: '[BUG] '
+labels: ['bug', 'needs-triage']
+assignees: ''
 \`\`\`
 
-### Template 3: Competition Task
-
-\`\`\`markdown
-## Competition Deliverable
-What needs to be submitted
-
-## Deadline
-December 9, 2025
-
-## Requirements
-- [ ] Requirement 1
-- [ ] Requirement 2
-- [ ] Requirement 3
-
-## Submission Checklist
-- [ ] Content created
-- [ ] Review completed
-- [ ] Uploaded to Devpost
-- [ ] Confirmation received
-
-## Labels
-`competition`, `P0-critical`, `documentation`
+### Competition Task (.github/ISSUE_TEMPLATE/competition.md)
+\`\`\`yaml
+name: Competition Task
+about: Meta Horizon Start Developer Competition task
+title: '[COMPETITION] '
+labels: ['competition', 'deadline:dec-9']
+assignees: ''
 \`\`\`
 
----
+## Spec-Kit Integration
 
-## Workflow Automation
+This project uses GitHub Spec Kit for AI-assisted development. Spec-kit documents are located in `.github/spec-kit/`:
 
-### Automation Rules
+1. **PROJECT_SPEC.md** - High-level user journeys and outcomes
+2. **TECHNICAL_PLAN.md** - Architecture, stack, constraints
+3. **TASK_BREAKDOWN.md** - Granular implementation tasks
 
-1. **Auto-label by Track**
-   - When issue title contains "[Web]" → Add `web` label
-   - When issue title contains "[Horizon]" → Add `horizon` label
-   - When issue title contains "[Competition]" → Add `competition` label
+### Spec-Kit Workflow
 
-2. **Auto-move to Review**
-   - When PR is opened → Move linked issue to "Review" column
+**Phase 1: Specify** - Define what to build
+- User journeys (AR try-on, photo booth, cocktail ordering)
+- Platform requirements (web, mobile, VR)
+- Success metrics
 
-3. **Auto-close on Merge**
-   - When PR is merged → Move issue to "Done" column
+**Phase 2: Plan** - Technical architecture
+- Stack decisions (Next.js, IWSDK, Horizon)
+- API contracts
+- Data flow and state management
+- Integration points (analytics, camera)
 
-4. **Deadline Alerts**
-   - 3 days before deadline → Add comment reminder
-   - 1 day before deadline → Notify in Slack/Discord
+**Phase 3: Tasks** - Break into implementable units
+- Each task = 1 GitHub Issue
+- Tasks map to development tracks
+- Clear acceptance criteria
+- Dependencies identified
 
-5. **Blocked Items**
-   - When labeled `blocked` → Move to "Blocked" column
-   - When `blocked` label removed → Move back to "In Progress"
+**Phase 4: Implement** - AI agent execution
+- Autonomous agents use spec-kit as source of truth
+- Changes reviewed against spec
+- Continuous alignment verification
 
----
-
-## Labels Taxonomy
+## Labels
 
 ### Priority
-- `P0-critical` - Blocks launch (red)
-- `P1-high` - Important for launch (orange)
-- `P2-medium` - Nice to have (yellow)
-- `P3-low` - Future enhancement (gray)
+- `P0` - Critical (launch blockers)
+- `P1` - High (competition, key features)
+- `P2` - Medium (enhancements)
+- `P3` - Low (nice-to-have)
 
 ### Track
-- `web` - Web PWA development (blue)
-- `horizon` - Meta Horizon work (purple)
-- `competition` - Competition submission (gold)
-- `launch` - Launch operations (green)
-- `infrastructure` - DevOps/infra (cyan)
-- `analytics` - Tracking/monitoring (pink)
+- `track:web-pwa`
+- `track:meta-horizon`
+- `track:competition`
+- `track:launch-ops`
+- `track:infrastructure`
+- `track:analytics`
 
-### Platform
-- `mobile` - Mobile-specific
-- `desktop` - Desktop-specific
-- `vr` - VR headset-specific
-- `cross-platform` - Multi-platform
+### Status
+- `status:backlog`
+- `status:ready`
+- `status:in-progress`
+- `status:blocked`
+- `status:review`
+- `status:done`
 
 ### Type
-- `feature` - New functionality
-- `bug` - Something broken
-- `documentation` - Docs/guides
-- `testing` - QA/testing work
-- `performance` - Optimization
-- `security` - Security fix
+- `bug`
+- `enhancement`
+- `documentation`
+- `research`
+- `competition`
 
----
+### Deadlines
+- `deadline:dec-9` - Competition submission
+- `deadline:dec-15` - Royal Sonesta launch
+- `deadline:q1-2026` - Next competition cycle
 
-## Milestone Structure
+## Milestones
 
-### Milestone 1: Competition Submission (Dec 9)
-**Goals:**
+### Milestone 1: Web PWA MVP (Completed)
+- Camera system with 60fps fallback
+- AR photo booth
+- Cocktail menu
+- Analytics integration
+- Vercel deployment
+
+### Milestone 2: Competition Submission (Dec 9)
+- Horizon world proof-of-concept
+- Mobile AR experience
+- Documentation package
+- Demo video
 - Join Meta Horizon Start Program
-- Complete demo video
-- Submit to Devpost
-- Document special features
 
-### Milestone 2: Royal Sonesta Launch (Dec 15)
-**Goals:**
-- Camera system production-ready
-- AR try-on experiences live
-- Analytics fully operational
-- Day-of runbook complete
+### Milestone 3: Royal Sonesta Launch (Dec 15)
+- Venue WiFi optimization
+- Staff training
+- Guest onboarding
+- Physical gem deployment
+- Live monitoring dashboard
 
-### Milestone 3: Post-Launch Optimization (Dec 16-31)
-**Goals:**
-- Analyze launch metrics
-- Implement user feedback
-- Optimize performance
-- Plan Q1 2026 competition
+### Milestone 4: Post-Launch Optimization (Dec 16-31)
+- Performance tuning
+- User feedback integration
+- Analytics review
+- ROI measurement
+- Q1 2026 competition planning
 
-### Milestone 4: Q1 2026 Competition Prep
-**Goals:**
-- Gather customer validation metrics
-- Build case studies
-- Enhanced feature set
-- Submit to next Meta competition
+## Automation Rules
 
----
+### Auto-labeling
+- Issues with "bug" in title → add `bug` label
+- Issues with "competition" in title → add `competition` + `deadline:dec-9` labels
+- PRs targeting `main` → require review
+
+### Status Transitions
+- Issue assigned → move to "In Progress"
+- PR opened → move issue to "Review"
+- PR merged → move issue to "Done"
+
+### Notifications
+- P0 issues → notify all team members
+- Deadline approaching (3 days) → daily reminders
+- Blocked issues → escalate to project lead
 
 ## Daily Standup Template
 
-**What did you complete yesterday?**
-- Issue #123: Camera fallback logic
-- Issue #124: Amplitude integration
+**Track Progress:**
+- Web PWA: [status]
+- Meta Horizon: [status]
+- Competition: [status]
+- Launch Ops: [status]
+- Infrastructure: [status]
+- Analytics: [status]
 
-**What are you working on today?**
-- Issue #125: Photo booth frame overlays
-- Issue #126: Horizon world setup
+**Completed Yesterday:**
+- [Issue #] - Description
 
-**Any blockers?**
-- Waiting for Meta Horizon Start Program approval
-- Need design assets for emerald glow effect
+**Today's Focus:**
+- [Issue #] - Description
 
----
+**Blockers:**
+- [Issue #] - Description + escalation needed
 
-## Weekly Review Template
+**Metrics:**
+- Sprint velocity: [points/week]
+- Issues closed: [#]
+- Days to Dec 9: [#]
+- Days to Dec 15: [#]
 
-**Week of [Date]**
+## Velocity Tracking
 
-**Velocity:** [Story points completed]
+**Sprint Duration:** 1 week (Mon-Fri)
 
-**Completed:**
-- ✅ Issue #123 (Web PWA, 5pts)
-- ✅ Issue #124 (Analytics, 3pts)
+**Story Points:**
+- XS: 1 point (< 2 hours)
+- S: 2 points (2-4 hours)
+- M: 3 points (4-8 hours)
+- L: 5 points (1-2 days)
+- XL: 8 points (3-5 days)
 
-**In Progress:**
-- 🔨 Issue #125 (Horizon, 8pts) - 60% complete
-- 🔨 Issue #126 (Competition, 5pts) - 30% complete
+**Team Capacity:**
+- Target: 20-25 points/sprint/developer
+- Track separately by development track
 
-**Blocked:**
-- 🚫 Issue #127 (Infrastructure) - Waiting on API key
+## GitHub Integration
 
-**Risks:**
-- Dec 9 deadline approaching - need to accelerate competition tasks
-- Camera performance on iPhone 12 needs optimization
+### Connect to v0 Project
+1. Push code to GitHub using v0's GitHub button
+2. Create GitHub Project in repository
+3. Import milestones and labels
+4. Set up automation rules
+5. Link issues to v0 tasks
 
-**Next Week Priorities:**
-1. Complete competition submission
-2. Finalize camera system
-3. Begin Horizon world scripting
+### Sync with v0 Workspace
+- v0 workspace: "Cultural hospitality AR Pilot"
+- GitHub repo: [your-org/emerald-gem-ar]
+- Auto-deploy: Vercel connected to main branch
+- Environment variables synced via Vercel
 
----
+## Resources
 
-## Integration with Existing Docs
-
-This GitHub Projects structure ties directly to:
-
-- `/docs/TRANSFORMATION_ROADMAP.md` - Technical architecture
-- `/docs/META_HORIZON_CHALLENGE_STRATEGY.md` - Competition strategy
-- `/docs/CAMERA_ARCHITECTURE.md` - Camera implementation
-- `/docs/DUAL_ANALYTICS_STRATEGY.md` - Analytics approach
-- `/app/dashboard/page.tsx` - Real-time monitoring
-- **Spec Kit Docs:**
-  - `.github/spec-kit/PROJECT_SPEC.md` - Living specification
-  - `.github/spec-kit/TECHNICAL_PLAN.md` - Architecture decisions  
-  - `.github/spec-kit/TASK_BREAKDOWN.md` - Implementation tasks
-
-All issues should reference relevant documentation for context.
-
----
-
-## Getting Started
-
-1. **Create GitHub Project**
-   - Go to repository → Projects → New Project
-   - Select "Board" template
-   - Add custom fields (Track, Priority, Deadline, Size, Platform)
-
-2. **Create Initial Issues**
-   - Use templates above
-   - Assign to tracks
-   - Set priorities and deadlines
-
-3. **Set Up Automation**
-   - Configure auto-labeling
-   - Set deadline reminders
-   - Connect PR workflow
-
-4. **Daily Updates**
-   - Move cards as work progresses
-   - Update issue comments with progress
-   - Tag blockers immediately
-
-5. **Weekly Reviews**
-   - Assess velocity
-   - Adjust priorities
-   - Refine estimates
-
----
-
-## Success Metrics
-
-**Track by Track:**
-
-- **Web PWA:** Camera uptime %, AR interaction rate
-- **Meta Horizon:** Asset conversion success rate, gizmo completion
-- **Competition:** Submission quality score, judge feedback
-- **Launch Ops:** Customer satisfaction, zero critical bugs
-- **Infrastructure:** Deployment frequency, build success rate
-- **Analytics:** Event capture rate, dashboard usage
-
-Monitor these via `/dashboard` and weekly reviews.
+- **Documentation:** `/docs` directory
+- **Spec-Kit:** `.github/spec-kit/`
+- **Issue Templates:** `.github/ISSUE_TEMPLATE/`
+- **Competition Details:** `docs/META_HORIZON_CHALLENGE_STRATEGY.md`
+- **Analytics Strategy:** `docs/DUAL_ANALYTICS_STRATEGY.md`
+- **Camera Architecture:** `docs/CAMERA_ARCHITECTURE.md`

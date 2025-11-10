@@ -1,444 +1,437 @@
-# Emerald Gem - Technical Plan
+# Emerald Gem AR Platform - Technical Plan
 
-**Based on:** PROJECT_SPEC.md v1.0
-**Stack:** Next.js 16, React 19.2, TypeScript, IWSDK, Universal AR, Amplitude, Customer.io
-**Architecture:** Hybrid Web PWA + Meta Horizon VR
-**Plan Version:** 1.0
+## Architecture Overview
 
-## System Architecture
-
-### High-Level Architecture Diagram
+### Multi-Platform Strategy
 
 \`\`\`
-┌─────────────────────────────────────────────────────────────┐
-│                      CLIENT LAYER                            │
-├──────────────┬──────────────┬──────────────┬────────────────┤
-│  iOS Safari  │ Android Web  │  Meta Quest  │    Desktop     │
-│  (Universal  │   (WebXR)    │   (IWSDK)    │  (Fallback)    │
-│     AR)      │              │              │                │
-└──────┬───────┴──────┬───────┴──────┬───────┴────────┬───────┘
-       │              │              │                │
-       └──────────────┴──────────────┴────────────────┘
-                      │
-         ┌────────────▼────────────┐
-         │   Device Detection      │
-         │   (lib/device-detection)│
-         └────────────┬────────────┘
-                      │
-         ┌────────────▼────────────┐
-         │  Camera Manager (60fps) │
-         │  (lib/camera-manager)   │
-         └────────────┬────────────┘
-                      │
-    ┌─────────────────┼─────────────────┐
-    │                 │                 │
-    ▼                 ▼                 ▼
-┌────────┐      ┌──────────┐     ┌──────────┐
-│ IWSDK  │      │Universal │     │  WebXR   │
-│Manager │      │AR Scene  │     │ Fallback │
-└───┬────┘      └────┬─────┘     └────┬─────┘
-    │                │                 │
-    └────────────────┼─────────────────┘
-                     │
-         ┌───────────▼──────────┐
-         │  Analytics Pipeline   │
-         │  (lib/analytics)      │
-         └───────────┬───────────┘
-                     │
-         ┌───────────┴───────────┐
-         │                       │
-    ┌────▼─────┐          ┌─────▼─────┐
-    │Amplitude │          │Customer.io│
-    │(Product) │          │(Marketing)│
-    └──────────┘          └───────────┘
-                     │
-         ┌───────────▼──────────┐
-         │  Intersection Layer   │
-         │  Web ↔ Horizon Sync   │
-         └───────────┬───────────┘
-                     │
-         ┌───────────▼──────────┐
-         │   Meta Horizon World  │
-         │   (TypeScript/Gizmos) │
-         └───────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  User Entry Points                               │
+│  • QR Code Scan (Physical Gem)                  │
+│  • Direct URL (Marketing)                       │
+│  • Meta Horizon World (VR/Mobile)               │
+└─────────────────┬───────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────┐
+│  Platform Detection & Routing                    │
+│  lib/device-detection.ts                        │
+│  • WebXR capable → Web PWA                      │
+│  • Meta Quest → Horizon VR                      │
+│  • Mobile → Universal AR SDK                    │
+└─────────────────┬───────────────────────────────┘
+                  │
+        ┌─────────┴─────────┬───────────┐
+        │                   │           │
+        ▼                   ▼           ▼
+┌──────────────┐  ┌─────────────┐  ┌──────────────┐
+│  Web PWA     │  │ Meta Horizon│  │ Intersection │
+│  (React)     │  │ (TypeScript)│  │ Layer        │
+│              │  │             │  │              │
+│ • Camera     │  │ • VR World  │  │ • Asset      │
+│ • AR Booth   │  │ • Passthrough│  │   Bridge     │
+│ • Menu       │  │ • Gizmos    │  │ • State Sync │
+│ • Analytics  │  │ • Mobile AR │  │ • Analytics  │
+└──────┬───────┘  └──────┬──────┘  └──────┬───────┘
+       │                 │                │
+       └─────────────────┴────────────────┘
+                         │
+                         ▼
+            ┌────────────────────────┐
+            │  Unified Analytics     │
+            │  • Amplitude           │
+            │  • Customer.io         │
+            │  • Cross-platform      │
+            └────────────────────────┘
 \`\`\`
 
-## Data Flow & API Architecture
+## Tech Stack
 
-### 1. Camera Access Flow
-\`\`\`typescript
-// lib/camera-manager.ts
-User Action → getUserMedia() → Progressive Fallback
-  ├─ Attempt 1: 60fps ideal (1280x720, front-facing)
-  ├─ Attempt 2: 30fps optimized (640x480, front-facing)
-  └─ Attempt 3: Basic (any resolution, front-facing)
-     → Success: Stream to AR framework
-     → Failure: Show permission/error UI
-\`\`\`
+### Web PWA (Foundation)
 
-**API Endpoints:**
-- N/A (browser WebRTC API only)
+**Framework:** Next.js 16.0.0 (App Router)
+- React 19.2 (Server Components + Client Components)
+- TypeScript 5.x
+- Tailwind CSS 4.x
+
+**AR/Camera:**
+- Native WebRTC (getUserMedia API)
+- IWSDK (Immersive Web SDK)
+- Universal AR SDK (Zappar Mattercraft)
+- Three.js (3D rendering)
 
 **State Management:**
-\`\`\`typescript
-interface CameraState {
-  stream: MediaStream | null;
-  status: 'idle' | 'requesting' | 'active' | 'error';
-  error: CameraError | null;
-  metrics: {
-    fps: number;
-    latency: number;
-    droppedFrames: number;
-  };
-}
-\`\`\`
+- React useState/useReducer (local state)
+- SWR (data fetching + caching)
+- Context API (global state where needed)
 
-### 2. Analytics Event Flow
-\`\`\`typescript
-// User Interaction → Analytics Pipeline → Dual Write
+**Analytics:**
+- @amplitude/analytics-browser 2.30.1 (client-side)
+- Customer.io CDP API (server-side via /api/track)
 
-Component Event
-  → trackEvent(eventName, properties)
-    → Amplitude.track() [client-side]
-    → POST /api/track [server-side]
-      → Customer.io Pipeline API
-\`\`\`
+**Deployment:**
+- Vercel (Next.js hosting)
+- Edge Functions (API routes)
+- CDN (static assets, 3D models)
 
-**API Endpoint:**
-\`\`\`typescript
-// POST /api/track
-Request Body: {
-  eventName: string;
-  properties: Record<string, any>;
-  userId?: string;
-  timestamp: number;
-  platform: 'web' | 'mobile' | 'vr';
-}
+### Meta Horizon (Transmutation)
 
-Response: {
-  success: boolean;
-  amplitudeStatus: 'sent' | 'error';
-  customerioStatus: 'sent' | 'error';
-}
-\`\`\`
+**Platform:** Meta Horizon Worlds
+- Horizon Desktop Editor
+- TypeScript Gizmo Scripts
+- Mobile + VR support
 
-**Event Taxonomy:**
-\`\`\`typescript
-// Preset Events (lib/analytics.ts)
-- ar_session_start
-- camera_initialized
-- cocktail_viewed
-- cocktail_try_on
-- photo_captured
-- photo_shared
-- order_placed
-- session_ended
-\`\`\`
+**API Access:**
+- Passthrough Camera API (experimental, Quest 3/3S)
+- Hand Interactions
+- UI Gizmos (panels, buttons, text)
 
-### 3. Asset Sync Flow (Intersection Layer)
-\`\`\`typescript
-// Web PWA → Meta Horizon Asset Bridge
+**Asset Pipeline:**
+- GLTF/GLB 3D models
+- Shared asset library with Web PWA
+- Format conversion tools
 
-Web Component Change
-  → intersection/asset-bridge.ts
-    → Convert GLB → FBX
-    → Upload to CDN
-    → Update Horizon world manifest
-    → Trigger Horizon Desktop Editor refresh
-\`\`\`
+### Intersection Layer
 
-**Data Schema:**
-\`\`\`typescript
-interface Asset {
-  id: string;
-  name: string;
-  type: 'model' | 'texture' | 'audio';
-  webFormat: string; // .glb, .png, .mp3
-  horizonFormat: string; // .fbx, .png, .mp3
-  webUrl: string;
-  horizonUrl: string;
-  syncStatus: 'pending' | 'synced' | 'error';
-  lastSync: Date;
-}
-\`\`\`
+**Purpose:** Bridge Web ↔ Horizon
+- Asset synchronization
+- State management
+- Analytics unification
+- Cross-platform event bus
 
-### 4. Customer.io Integration
-\`\`\`typescript
-// Server-side only (security)
+**Implementation:**
+- `/intersection/asset-bridge.ts`
+- `/intersection/state-sync.ts`
+- `/intersection/event-bridge.ts`
 
-// POST /api/track → Customer.io Pipeline
-const response = await fetch('https://cdp.customer.io/v1/events', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Basic ${base64(siteId:apiKey)}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    id: userId,
-    name: eventName,
-    data: properties,
-    timestamp: Date.now() / 1000
-  })
-});
-\`\`\`
-
-## Stack Details
-
-### Frontend (Next.js 16 + React 19.2)
-\`\`\`json
-{
-  "core": {
-    "next": "16.0.0",
-    "react": "19.2.0",
-    "typescript": "^5"
-  },
-  "ar": {
-    "@iwsdk/core": "latest",
-    "@zappar/universal-ar": "^1.0.0",
-    "three": "latest",
-    "@react-three/fiber": "latest",
-    "@react-three/drei": "latest"
-  },
-  "analytics": {
-    "@amplitude/analytics-browser": "^2.0.0"
-  },
-  "ui": {
-    "tailwindcss": "^4.0.0",
-    "framer-motion": "latest"
-  }
-}
-\`\`\`
-
-### Backend (Next.js API Routes)
-\`\`\`typescript
-// app/api/track/route.ts - Customer.io integration
-// app/api/health/route.ts - System health checks
-// app/api/version/route.ts - Deployment tracking
-\`\`\`
-
-### Database & Storage
-- **Primary:** Vercel KV (Redis) for session state
-- **Assets:** Vercel Blob for 3D models/images
-- **Analytics:** Amplitude + Customer.io (external)
-
-### Deployment (Vercel)
-\`\`\`yaml
-# vercel.json
-{
-  "buildCommand": "pnpm build",
-  "framework": "nextjs",
-  "regions": ["iad1"], # Washington DC (Royal Sonesta proximity)
-  "env": {
-    "NEXT_PUBLIC_AMPLITUDE_API_KEY": "@amplitude_key",
-    "CUSTOMERIO_API_KEY": "@customerio_key",
-    "NEXT_PUBLIC_CUSTOMERIO_SITE_ID": "@customerio_site_id"
-  }
-}
-\`\`\`
-
-## Component Architecture
+## Data Flow
 
 ### Camera System
+
+\`\`\`
+User Device Camera
+       ↓
+getUserMedia() (browser API)
+       ↓
+lib/camera-manager.ts
+       ↓
+Progressive Fallback:
+• Try 60fps (ideal: { width: 1920, height: 1080, frameRate: 60 })
+• Fallback 30fps (optimized: { frameRate: 30 })
+• Fallback basic (any available stream)
+       ↓
+<video> element (ref)
+       ↓
+Canvas/WebGL (for filters)
+       ↓
+Display + Capture
+\`\`\`
+
+### Analytics Flow
+
+\`\`\`
+User Action (web, mobile, VR)
+       ↓
+trackEvent() [lib/analytics.ts]
+       ↓
+┌─────────────────┴─────────────────┐
+│                                   │
+▼                                   ▼
+Amplitude.track()           POST /api/track
+(client-side)              (server-side)
+       ↓                            ↓
+Amplitude Servers           Customer.io CDP
+       ↓                            ↓
+Product Dashboards          Marketing Automation
+\`\`\`
+
+### AR Content Rendering
+
+\`\`\`
+Cocktail Data (JSON)
+       ↓
+SWR fetch (/api/cocktails)
+       ↓
+Three.js Scene Setup
+       ↓
+Load GLTF Model
+       ↓
+Position in AR Space
+       ↓
+User Interaction (rotate, zoom)
+       ↓
+Analytics tracking
+\`\`\`
+
+## API Endpoints
+
+### /api/track (POST)
+**Purpose:** Unified analytics tracking endpoint
+
+**Request:**
 \`\`\`typescript
-// lib/camera-manager.ts (Singleton)
-export class CameraManager {
-  async initialize(): Promise<MediaStream>
-  async switchCamera(direction: 'front' | 'back'): Promise<void>
-  getMetrics(): CameraMetrics
-  destroy(): void
+{
+  userId?: string
+  event: string
+  properties: Record<string, any>
+  type?: 'track' | 'identify'
+  traits?: Record<string, any>
+  platform: 'web' | 'horizon' | 'mobile'
 }
-
-// components/camera/camera-feed.tsx (React UI)
-<CameraFeed
-  onStreamReady={(stream) => {}}
-  onError={(error) => {}}
-  targetFPS={60}
-  preferredResolution={{ width: 1280, height: 720 }}
-/>
 \`\`\`
 
-### AR Scenes
+**Response:**
 \`\`\`typescript
-// components/ar/iwsdk-ar-scene.tsx (Meta Quest)
-// components/ar/universal-ar-scene.tsx (iOS)
-// components/ar/mr-demo-scene.tsx (Android WebXR)
-
-// Shared interface
-interface ARScene {
-  initialize(): Promise<void>;
-  loadAsset(url: string): Promise<Object3D>;
-  placeObject(object: Object3D, position: Vector3): void;
-  capturePhoto(): Promise<Blob>;
-  destroy(): void;
+{
+  success: boolean
+  type: 'track' | 'identify'
+  event?: string
 }
 \`\`\`
 
-### Analytics Wrapper
+**Implementation:**
+- Forwards to Customer.io CDP API
+- Parallel client-side Amplitude tracking
+- Error handling and retry logic
+- Rate limiting (1000 req/min)
+
+### /api/cocktails (GET)
+**Purpose:** Fetch cocktail menu data
+
+**Response:**
 \`\`\`typescript
-// lib/analytics.ts
-export const analytics = {
-  // Preset functions
-  trackARSession: (platform: Platform) => void;
-  trackCocktailView: (cocktailId: string) => void;
-  trackPhotoCapture: (frameId: string) => void;
-  trackOrder: (items: OrderItem[]) => void;
-  
-  // Generic
-  track: (event: string, props: Record) => void;
-};
+{
+  cocktails: Array<{
+    id: string
+    name: string
+    description: string
+    price: number
+    ingredients: string[]
+    model3d: string // URL to GLTF model
+    image: string
+    category: 'signature' | 'classic' | 'seasonal'
+  }>
+}
 \`\`\`
 
-## Constraints & Requirements
+### /api/photos/upload (POST)
+**Purpose:** Upload captured AR photos
 
-### Performance Budgets
-\`\`\`yaml
-Initial Load:
-  - HTML: < 50KB
-  - CSS: < 100KB
-  - JS (first chunk): < 500KB
-  - Total FCP: < 3s
+**Request:** FormData with image blob
 
-Runtime:
-  - Camera FPS: 60 (degrade to 30)
-  - Memory: < 150MB
-  - Battery drain: < 15%/hour
-  - Network: Works on 3G (600kbps min)
-\`\`\`
-
-### Browser Support
-\`\`\`yaml
-Tier 1 (Priority):
-  - iOS Safari 15+
-  - Android Chrome 100+
-  - Meta Quest Browser
-
-Tier 2 (Fallback):
-  - Desktop Chrome 100+
-  - Desktop Safari 15+
-  - Edge 100+
-\`\`\`
-
-### Security & Privacy
-\`\`\`yaml
-Camera:
-  - Explicit permission prompt
-  - No persistent video recording
-  - Stream destroyed on unmount
-
-Analytics:
-  - PII hashed before transmission
-  - GDPR consent banner (EU users)
-  - Data retention: 90 days
-
-API Keys:
-  - Client: NEXT_PUBLIC_* (Amplitude)
-  - Server: CUSTOMERIO_API_KEY (API routes only)
-\`\`\`
-
-## Error Handling & Monitoring
-
-### Error Boundaries
+**Response:**
 \`\`\`typescript
-// app/error.tsx - Global error boundary
-// components/ar/*-scene.tsx - AR-specific errors
-// lib/camera-manager.ts - Camera-specific errors
+{
+  success: boolean
+  url: string
+  shareUrl: string
+}
 \`\`\`
 
-### Monitoring Stack
-\`\`\`yaml
-Real-time:
-  - Amplitude (user behavior)
-  - Customer.io (event pipeline)
-  - Vercel Analytics (web vitals)
+## Environment Variables
 
-Dashboard:
-  - /dashboard - Custom metrics UI
-  - intersection/transformation-monitor.ts - Pipeline health
-\`\`\`
+### Required
 
-### Alerting Thresholds
-\`\`\`yaml
-Critical:
-  - Camera init failure rate > 10%
-  - API error rate > 5%
-  - Page load time > 5s (p95)
-  - Session completion rate < 40%
-
-Warning:
-  - FPS < 30 for > 50% of users
-  - Memory usage > 200MB
-  - Asset load time > 10s
-\`\`\`
-
-## Development Workflow
-
-### Local Development
 \`\`\`bash
-# Install dependencies
-pnpm install
+# Analytics
+NEXT_PUBLIC_AMPLITUDE_API_KEY=<amplitude_key>
+NEXT_PUBLIC_CUSTOMERIO_SITE_ID=<site_id>
+CUSTOMERIO_API_KEY=<api_key> # Server-only
 
-# Run dev server
-pnpm dev # → http://localhost:3000
+# Event Configuration
+NEXT_PUBLIC_EVENT_NAME="Royal Sonesta Seattle Launch"
+NEXT_PUBLIC_EVENT_DATE="2025-12-15"
 
-# Run Horizon Desktop Editor (parallel)
-# Set API endpoint: http://localhost:3000
+# Feature Flags
+NEXT_PUBLIC_ENABLE_PHOTO_BOOTH=true
+NEXT_PUBLIC_ENABLE_COCKTAIL_MENU=true
+NEXT_PUBLIC_ENABLE_POLLS=false
+NEXT_PUBLIC_ENABLE_QA=false
+
+# Git Info (Auto-set by Vercel)
+VERCEL_GIT_COMMIT_SHA=<commit_hash>
+VERCEL_GIT_COMMIT_REF=<branch_name>
 \`\`\`
 
-### Testing Strategy
-\`\`\`yaml
-Unit Tests:
-  - lib/camera-manager.test.ts
-  - lib/analytics.test.ts
-  - intersection/*.test.ts
+### Optional
 
-Integration Tests:
-  - Camera → AR scene flow
-  - Analytics → Customer.io flow
-  - Asset sync flow
-
-E2E Tests (Playwright):
-  - Full user journey tests
-  - Cross-browser compatibility
-  - Performance benchmarks
+\`\`\`bash
+# 8th Wall (iOS Safari fallback)
+NEXT_PUBLIC_8THWALL_APP_KEY=<8thwall_key>
 \`\`\`
 
-### Deployment Pipeline
-\`\`\`yaml
-1. Code → GitHub (main branch)
-2. Vercel auto-deploy → preview URL
-3. QA validation on target devices
-4. Merge to production → vercel.app domain
-5. Custom domain: emeraldgem.royalsonesta.com
+## File Structure
+
+\`\`\`
+emerald-gem-ar/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── feature.md
+│   │   ├── bug.md
+│   │   └── competition.md
+│   └── spec-kit/
+│       ├── PROJECT_SPEC.md
+│       ├── TECHNICAL_PLAN.md
+│       └── TASK_BREAKDOWN.md
+├── app/
+│   ├── api/
+│   │   ├── track/route.ts
+│   │   ├── cocktails/route.ts
+│   │   └── photos/upload/route.ts
+│   ├── ar/
+│   │   ├── photo-booth/page.tsx
+│   │   └── cocktails/page.tsx
+│   ├── dashboard/page.tsx
+│   ├── transformation/page.tsx
+│   ├── layout.tsx
+│   ├── layout-client.tsx
+│   ├── page.tsx
+│   └── globals.css
+├── components/
+│   ├── camera/
+│   │   └── camera-feed.tsx
+│   └── ui/ (shadcn components)
+├── lib/
+│   ├── analytics.ts
+│   ├── camera-manager.ts
+│   └── device-detection.ts
+├── intersection/
+│   ├── asset-bridge.ts
+│   ├── state-sync.ts
+│   └── event-bridge.ts
+├── docs/
+│   ├── DUAL_ANALYTICS_STRATEGY.md
+│   ├── CAMERA_ARCHITECTURE.md
+│   ├── META_HORIZON_CHALLENGE_STRATEGY.md
+│   └── GITHUB_PROJECTS_STRUCTURE.md
+├── public/
+│   ├── models/ (GLTF 3D assets)
+│   └── images/
+└── package.json
 \`\`\`
 
-## Integration Points
+## Security
 
-### Horizon World ↔ Web PWA
-\`\`\`typescript
-// Horizon TypeScript → Web API
-const response = await fetch('https://emeraldgem.app/api/track', {
-  method: 'POST',
-  body: JSON.stringify({
-    eventName: 'vr_session_started',
-    properties: { worldId: 'emerald-gem-v1' },
-    platform: 'vr'
-  })
-});
+### Client-Side Safety
+- NEXT_PUBLIC_* variables exposed (by design)
+- Amplitude API key is read-only (safe to expose)
+- Customer.io Site ID is public identifier
+
+### Server-Side Protection
+- CUSTOMERIO_API_KEY (no NEXT_PUBLIC_ prefix)
+- Only accessible in API routes
+- Never sent to client bundle
+
+### Camera Permissions
+- Request permissions with clear explanation
+- Handle denial gracefully (fallback to menu-only)
+- No video recording, only real-time stream
+
+## Performance Optimization
+
+### Camera
+- Progressive quality fallback
+- Auto-detect device capabilities
+- Retry logic with exponential backoff
+- Performance monitoring (FPS, latency, drops)
+
+### 3D Assets
+- GLTF/GLB compression
+- Draco mesh compression
+- Texture optimization
+- Lazy loading
+- CDN caching
+
+### Code Splitting
+- Route-based code splitting (Next.js automatic)
+- Dynamic imports for heavy components
+- Separate bundles for AR features
+
+### Caching
+- SWR for data fetching
+- Service Worker (PWA)
+- CDN for static assets
+- Browser caching headers
+
+## Testing Strategy
+
+### Manual Testing
+- Device matrix (iOS/Android, flagship/mid-range)
+- Browser compatibility
+- Camera permission flows
+- AR performance benchmarks
+
+### Automated Testing
+- Unit tests (Jest + React Testing Library)
+- E2E tests (Playwright)
+- Performance monitoring (Lighthouse CI)
+
+### Staging Environment
+- Vercel Preview deployments
+- Feature flags for gradual rollout
+- A/B testing infrastructure
+
+## Deployment
+
+### Vercel Configuration
+\`\`\`javascript
+// next.config.mjs
+export default {
+  reactStrictMode: true,
+  experimental: {
+    cacheComponents: true,
+    reactCompiler: true
+  },
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: [
+        { key: 'X-Frame-Options', value: 'DENY' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'Permissions-Policy', value: 'camera=(self), microphone=()' }
+      ]
+    }
+  ]
+}
 \`\`\`
 
-### Tavus.io Integration (Future Phase 2)
-\`\`\`typescript
-// AI Avatar video overlay
-const avatar = await tavus.createAvatar({
-  script: cocktailDescription,
-  voice: 'professional-female',
-  duration: 15
-});
+### Continuous Deployment
+- Push to `main` → Vercel auto-deploys
+- Preview deployments for PRs
+- Environment variables via Vercel dashboard
 
-// Overlay on AR scene
-arScene.playVideo(avatar.videoUrl);
-\`\`\`
+## Monitoring
 
----
+### Metrics
+- Amplitude: DAU, MAU, funnels, retention
+- Customer.io: Campaign performance, user segments
+- Vercel Analytics: Performance, errors, Web Vitals
+- Custom: Camera FPS, AR initialization time
 
-**Next:** See TASK_BREAKDOWN.md for implementation tasks
+### Alerts
+- Error rate > 1%
+- Camera initialization failure > 10%
+- API latency > 500ms
+- Daily active users < threshold
+
+## Competition Submission Requirements
+
+### Deliverables
+1. Horizon world build (published, accessible)
+2. Mobile AR experience (iOS + Android)
+3. Documentation (README, architecture diagram)
+4. Demo video (< 3 min, showcasing Passthrough Camera + AI)
+5. Technical writeup (innovation highlights)
+
+### Meta Horizon Start Program
+- Enrollment required before Dec 9
+- Application: https://developer.meta.com/horizon/start
+- Approval time: 1-3 days
+
+### Judging Criteria
+- Innovation (Passthrough Camera + AI usage)
+- User experience (mobile + VR)
+- Technical execution (performance, polish)
+- Real-world deployment (Royal Sonesta proof)
+- Business viability (ROI model, scalability)
