@@ -21,16 +21,30 @@ export default function Page() {
             Multi-platform immersive hospitality experiences powered by WebXR, Meta Horizon, and Universal AR
           </p>
 
-          {/* Critical Launch Date */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <Calendar className="w-5 h-5 text-emerald-600" />
-            <span className="text-lg font-semibold">
-              Target Launch: <span className="text-emerald-600">December 15, 2025</span>
-            </span>
-            <Badge variant="outline" className="ml-2">
-              Royal Sonesta Seattle
-            </Badge>
+          <div className="flex flex-col items-center gap-4 mb-8">
+            {/* Critical Launch Date */}
+            <div className="flex items-center justify-center gap-2">
+              <Calendar className="w-5 h-5 text-emerald-600" />
+              <span className="text-lg font-semibold">
+                Target Launch: <span className="text-emerald-600">December 15, 2025</span>
+              </span>
+              <Badge variant="outline" className="ml-2">
+                Royal Sonesta Seattle
+              </Badge>
+            </div>
+
+            {/* Meta Horizon Competition Badge */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-300">
+              <Headset className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium">
+                <span className="text-blue-600 font-semibold">Meta Horizon Start Developer Competition</span>
+                {" • "}
+                <span className="text-muted-foreground">$1.5M Prize Pool • Dec 9 Deadline</span>
+              </span>
+              <Badge className="bg-blue-600 text-white ml-2">Lifestyle Track + AI Award</Badge>
+            </div>
           </div>
+          {/* </CHANGE> */}
 
           <div className="flex gap-4 justify-center">
             <Link href="/ar/photo-booth">
@@ -49,13 +63,16 @@ export default function Page() {
 
         {/* Platform Strategy */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-center">Multi-Platform Strategy</h2>
+          <h2 className="text-3xl font-bold mb-2 text-center">Multi-Platform Strategy</h2>
+          <p className="text-center text-muted-foreground mb-8">
+            Built for Meta Horizon Start Developer Competition • Lifestyle Track • Passthrough Camera + AI Innovation
+          </p>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="border-emerald-200">
               <CardHeader>
                 <Smartphone className="w-10 h-10 text-emerald-600 mb-2" />
                 <CardTitle>Web PWA</CardTitle>
-                <CardDescription>Scaffold Phase</CardDescription>
+                <CardDescription>Scaffold Phase • IWSDK Eligible</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -65,6 +82,7 @@ export default function Page() {
                   <Badge variant="secondary">IWSDK</Badge>
                   <Badge variant="secondary">Universal AR</Badge>
                   <Badge variant="secondary">Three.js</Badge>
+                  <Badge className="bg-blue-500">Competition Ready</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -73,7 +91,7 @@ export default function Page() {
               <CardHeader>
                 <Headset className="w-10 h-10 text-emerald-600 mb-2" />
                 <CardTitle>Meta Horizon</CardTitle>
-                <CardDescription>Transmutation Phase</CardDescription>
+                <CardDescription>Transmutation Phase • Native Build</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -83,6 +101,7 @@ export default function Page() {
                   <Badge variant="secondary">Quest VR</Badge>
                   <Badge variant="secondary">Mobile AR</Badge>
                   <Badge variant="secondary">3B+ Users</Badge>
+                  <Badge className="bg-purple-500">AI + Camera Award</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -91,7 +110,7 @@ export default function Page() {
               <CardHeader>
                 <Zap className="w-10 h-10 text-emerald-600 mb-2" />
                 <CardTitle>Intersection Layer</CardTitle>
-                <CardDescription>Stabilization Phase</CardDescription>
+                <CardDescription>Stabilization Phase • Cross-Platform</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -106,6 +125,107 @@ export default function Page() {
             </Card>
           </div>
         </div>
+        {/* </CHANGE> */}
+
+        {/* Meta Horizon Competition Alignment */}
+        <div className="mb-16">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 border border-blue-200">
+            <div className="flex items-center gap-3 mb-4">
+              <Headset className="w-8 h-8 text-blue-600" />
+              <h2 className="text-3xl font-bold">Meta Horizon Start Competition Strategy</h2>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 className="font-semibold text-lg mb-3 text-blue-900">Competition Advantages</h3>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✓</span>
+                    <span>
+                      <strong>Lifestyle Track Fit:</strong> Cultural hospitality + luxury hotel deployment
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✓</span>
+                    <span>
+                      <strong>Passthrough Camera + AI:</strong> Front-facing try-on + Tavus.io personalization
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✓</span>
+                    <span>
+                      <strong>IWSDK Eligible:</strong> Web PWA qualifies without Horizon rebuild
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">✓</span>
+                    <span>
+                      <strong>Real Customer Launch:</strong> Royal Sonesta Dec 15 deployment proof
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg mb-3 text-purple-900">Technical Innovation</h3>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-600 font-bold">→</span>
+                    <span>
+                      <strong>Multi-platform transmutation:</strong> Web → Horizon → Native pipeline
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-600 font-bold">→</span>
+                    <span>
+                      <strong>Intersection layer:</strong> Autonomous asset sync and state management
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-600 font-bold">→</span>
+                    <span>
+                      <strong>60fps camera system:</strong> Production-ready face tracking for try-ons
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-purple-600 font-bold">→</span>
+                    <span>
+                      <strong>Dual analytics:</strong> Amplitude + Customer.io unified pipeline
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-blue-200">
+              <div className="flex gap-3">
+                <Link href="/docs/META_HORIZON_ELIGIBILITY_ANALYSIS.md">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
+                    View Eligibility Analysis
+                  </Button>
+                </Link>
+                <Link href="/docs/META_HORIZON_CHALLENGE_STRATEGY.md">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-purple-600 text-purple-600 hover:bg-purple-50 bg-transparent"
+                  >
+                    Competition Strategy
+                  </Button>
+                </Link>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Submission Deadline</p>
+                <p className="font-semibold text-blue-600">December 9, 2025</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* </CHANGE> */}
 
         {/* Key Metrics */}
         <div className="mb-16">
