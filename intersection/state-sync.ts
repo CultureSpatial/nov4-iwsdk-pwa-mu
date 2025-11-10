@@ -1,6 +1,6 @@
 // Cross-platform state synchronization
 
-import type { ComponentState, Platform } from "./types"
+import type { ComponentState, Platform } from "@/intersection/types"
 
 export class StateSyncManager {
   private stateCache: Map<string, ComponentState> = new Map()

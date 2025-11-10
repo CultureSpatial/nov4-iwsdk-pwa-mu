@@ -1,6 +1,6 @@
 // Asset synchronization bridge between Web and Horizon
 
-import type { AssetMapping, Platform } from "./types"
+import type { AssetMapping, Platform } from "@/intersection/types"
 
 export class AssetBridge {
   private assetMappings: Map<string, AssetMapping> = new Map()

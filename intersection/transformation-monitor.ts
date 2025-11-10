@@ -1,8 +1,8 @@
 // Monitors the PWA → Horizon transformation pipeline
 
-import type { TransformationStatus, TransformationError } from "./types"
-import { assetBridge } from "./asset-bridge"
-import { eventBridge } from "./event-bridge"
+import type { TransformationStatus, TransformationError } from "@/intersection/types"
+import { assetBridge } from "@/intersection/asset-bridge"
+import { eventBridge } from "@/intersection/event-bridge"
 
 export class TransformationMonitor {
   private status: TransformationStatus = {

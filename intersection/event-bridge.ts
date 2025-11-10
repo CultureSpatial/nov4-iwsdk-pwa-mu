@@ -1,6 +1,6 @@
 // Cross-platform event tracking bridge
 
-import type { CrossPlatformEvent, Platform } from "./types"
+import type { CrossPlatformEvent, Platform } from "@/intersection/types"
 
 export class EventBridge {
   private eventQueue: CrossPlatformEvent[] = []
