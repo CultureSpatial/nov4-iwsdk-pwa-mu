@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import {
   Settings,
   Github,
   XCircle,
+  Network,
 } from "lucide-react"
 
 type Phase = "scaffolding" | "transmutation" | "stabilization"
@@ -68,6 +69,15 @@ interface GitHubSync {
   commitTime: Date
   syncStatus: "success" | "in-progress" | "failed"
   pendingChanges: number
+}
+
+interface IntersectionStatus {
+  assetsSyncing: number
+  eventsPending: number
+  stateSubscribers: number
+  lastHealthCheck: Date
+  healthy: boolean
+  issues: string[]
 }
 
 export default function TransmutationDashboard() {
@@ -183,6 +193,42 @@ export default function TransmutationDashboard() {
     pendingChanges: 0,
   })
 
+  const [intersectionStatus, setIntersectionStatus] = useState<IntersectionStatus>({
+    assetsSyncing: 3,
+    eventsPending: 12,
+    stateSubscribers: 8,
+    lastHealthCheck: new Date(),
+    healthy: true,
+    issues: [] as string[],
+  })
+
+  useEffect(() => {
+    const loadIntersectionStatus = async () => {
+      try {
+        const { transformationMonitor, assetBridge, eventBridge } = await import("@/intersection")
+
+        const health = await transformationMonitor.runHealthCheck()
+        const syncStatus = assetBridge.getSyncQueueStatus()
+        const pendingEvents = eventBridge.getPendingEventCount()
+
+        setIntersectionStatus({
+          assetsSyncing: syncStatus.pending,
+          eventsPending: pendingEvents,
+          stateSubscribers: 8,
+          lastHealthCheck: new Date(),
+          healthy: health.healthy,
+          issues: health.issues,
+        })
+      } catch (error) {
+        console.error("[v0] Failed to load intersection status:", error)
+      }
+    }
+
+    loadIntersectionStatus()
+    const interval = setInterval(loadIntersectionStatus, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const getStatusColor = (status: Status) => {
     switch (status) {
       case "healthy":
@@ -292,6 +338,7 @@ export default function TransmutationDashboard() {
           <TabsList className="bg-slate-900/50 border border-emerald-700/30">
             <TabsTrigger value="agents">Autonomous Agents</TabsTrigger>
             <TabsTrigger value="assets">Asset Pipeline</TabsTrigger>
+            <TabsTrigger value="intersection">Intersection Layer</TabsTrigger>
             <TabsTrigger value="api">API Health</TabsTrigger>
             <TabsTrigger value="github">Version Control</TabsTrigger>
             <TabsTrigger value="logs">Event Logs</TabsTrigger>
@@ -368,6 +415,139 @@ export default function TransmutationDashboard() {
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          {/* Intersection Layer */}
+          <TabsContent value="intersection" className="space-y-4">
+            <Card className="bg-slate-900/50 border-emerald-700/30">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Network className="h-5 w-5 text-emerald-400" />
+                  Web ↔ Horizon Intersection Layer
+                </CardTitle>
+                <CardDescription className="text-emerald-200">
+                  Cross-platform synchronization between PWA and Meta Horizon Desktop Editor
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-700/30">
+                    <div className="flex items-center gap-2 text-emerald-200 text-sm mb-2">
+                      <Upload className="h-4 w-4" />
+                      Assets Syncing
+                    </div>
+                    <div className="text-2xl font-bold text-white">{intersectionStatus.assetsSyncing}</div>
+                    <div className="text-xs text-emerald-200 mt-1">GLB → FBX conversion queue</div>
+                  </div>
+
+                  <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-700/30">
+                    <div className="flex items-center gap-2 text-emerald-200 text-sm mb-2">
+                      <Activity className="h-4 w-4" />
+                      Events Pending
+                    </div>
+                    <div className="text-2xl font-bold text-white">{intersectionStatus.eventsPending}</div>
+                    <div className="text-xs text-emerald-200 mt-1">Customer.io flush queue</div>
+                  </div>
+
+                  <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-700/30">
+                    <div className="flex items-center gap-2 text-emerald-200 text-sm mb-2">
+                      <Zap className="h-4 w-4" />
+                      State Subscribers
+                    </div>
+                    <div className="text-2xl font-bold text-white">{intersectionStatus.stateSubscribers}</div>
+                    <div className="text-xs text-emerald-200 mt-1">Active sync connections</div>
+                  </div>
+
+                  <div className="bg-emerald-900/30 p-4 rounded-lg border border-emerald-700/30">
+                    <div className="flex items-center gap-2 text-emerald-200 text-sm mb-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Health Status
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      {intersectionStatus.healthy ? (
+                        <>
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                          <span className="text-emerald-400 font-semibold">Healthy</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="h-5 w-5 text-red-400" />
+                          <span className="text-red-400 font-semibold">Issues</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {!intersectionStatus.healthy && intersectionStatus.issues.length > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-red-400 mb-2">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-semibold">Intersection Layer Issues</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {intersectionStatus.issues.map((issue, idx) => (
+                        <li key={idx} className="text-sm text-red-200">
+                          • {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="bg-slate-800/50 p-4 rounded-lg border border-emerald-700/20">
+                  <h3 className="text-white font-semibold mb-3">Active Synchronization Pipelines</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="text-emerald-200 text-sm">Asset Bridge (GLB → FBX)</span>
+                      </div>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">Active</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="text-emerald-200 text-sm">State Sync (Component States)</span>
+                      </div>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">Active</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="text-emerald-200 text-sm">Event Bridge (Analytics Tracking)</span>
+                      </div>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">Active</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                        <span className="text-emerald-200 text-sm">Transformation Monitor (Pipeline Health)</span>
+                      </div>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">Active</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Force Asset Sync
+                  </Button>
+                  <Button variant="outline" className="border-emerald-700 text-emerald-400 bg-transparent">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Flush Event Queue
+                  </Button>
+                  <Button variant="outline" className="border-emerald-700 text-emerald-400 bg-transparent">
+                    <Activity className="h-4 w-4 mr-2" />
+                    Run Health Check
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* API Health */}
