@@ -47,6 +47,95 @@ export default function Page() {
           </div>
         </div>
 
+        {/* Meta Horizon Competition Section */}
+        <div className="mb-16 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-8 border-2 border-purple-200">
+          <div className="text-center mb-6">
+            <Badge className="mb-2 bg-purple-600">
+              <Zap className="w-3 h-3 mr-1" />
+              Competition Opportunity
+            </Badge>
+            <h2 className="text-3xl font-bold mb-2">Meta Horizon Start Developer Competition</h2>
+            <p className="text-muted-foreground">$1.5M Prize Pool • Deadline: December 9, 2025</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-2xl font-bold text-purple-600">Lifestyle Track</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Hospitality innovation with AR try-on flows, photo booth, and cocktail menus
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-2xl font-bold text-purple-600">Special Award</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Passthrough Camera + AI: 60fps camera system with Tavus.io concierge integration
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-2xl font-bold text-purple-600">Immersive Web SDK</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Current PWA qualifies: IWSDK + Universal AR SDK multi-platform architecture
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="bg-white rounded-lg p-6">
+            <h3 className="font-semibold mb-4">Competitive Advantages</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-2">
+                <Badge variant="secondary" className="mt-1">
+                  ✓
+                </Badge>
+                <div>
+                  <p className="font-medium">Real Customer</p>
+                  <p className="text-sm text-muted-foreground">Royal Sonesta Seattle launch Dec 15</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="secondary" className="mt-1">
+                  ✓
+                </Badge>
+                <div>
+                  <p className="font-medium">Revenue Model</p>
+                  <p className="text-sm text-muted-foreground">Digital Royal Wardrobe 285% ROI</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="secondary" className="mt-1">
+                  ✓
+                </Badge>
+                <div>
+                  <p className="font-medium">Multi-Platform</p>
+                  <p className="text-sm text-muted-foreground">Web PWA + Meta Horizon + Mobile AR</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Badge variant="secondary" className="mt-1">
+                  ✓
+                </Badge>
+                <div>
+                  <p className="font-medium">60fps Camera</p>
+                  <p className="text-sm text-muted-foreground">8th Wall standard with progressive fallback</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Platform Strategy */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Multi-Platform Strategy</h2>
@@ -133,11 +222,11 @@ export default function Page() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-4xl font-bold text-emerald-600">$2.5M</CardTitle>
-                <CardDescription>Contest Prize</CardDescription>
+                <CardTitle className="text-4xl font-bold text-emerald-600">$1.5M</CardTitle>
+                <CardDescription>Competition Prize</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Mobile games competition</p>
+                <p className="text-sm text-muted-foreground">Meta Horizon Start competition</p>
               </CardContent>
             </Card>
 
