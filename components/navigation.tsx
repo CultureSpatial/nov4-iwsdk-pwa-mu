@@ -23,11 +23,14 @@ import {
   QrCode,
   CalendarDays,
   Webhook,
+  Rocket,
+  FileText,
 } from "lucide-react"
 
 const routes = [
   { name: "Home", path: "/", icon: Home },
-  { name: "Events", path: "/events", icon: CalendarDays }, // Added Events route
+  { name: "Transformation Roadmap", path: "/transformation", icon: Rocket },
+  { name: "Events Pipeline", path: "/events", icon: CalendarDays },
   { name: "MR Demo", path: "/mr-demo", icon: Hand },
   { name: "Photo Booth", path: "/ar/photo-booth", icon: Camera },
   { name: "Cocktails", path: "/ar/cocktails", icon: Wine },
@@ -39,10 +42,11 @@ const routes = [
   { name: "QR Codes", path: "/qr-codes", icon: QrCode },
   { name: "ACE Workflow", path: "/ace", icon: Activity },
   { name: "IWSDK Tests", path: "/test/iwsdk", icon: TestTube },
-  { name: "Customer.io Test", path: "/test/customerio", icon: Webhook }, // Added Customer.io webhook test page
+  { name: "Customer.io Test", path: "/test/customerio", icon: Webhook },
   { name: "Influencer Kit", path: "/influencer", icon: Users },
   { name: "Retailer Dashboard", path: "/retailer", icon: Store },
   { name: "Hybrid Event", path: "/event", icon: Calendar },
+  { name: "Technical Docs", path: "/docs", icon: FileText },
 ]
 
 export function Navigation() {
@@ -60,10 +64,10 @@ export function Navigation() {
           <Menu className="h-5 w-5 text-white" />
         </Button>
       </SheetTrigger>
-      <SheetContent className="bg-emerald-950 border-emerald-700 text-white">
+      <SheetContent className="bg-emerald-950 border-emerald-700 text-white overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-white">Navigation</SheetTitle>
-          <SheetDescription className="text-emerald-200">Access all AR experiences and tools</SheetDescription>
+          <SheetDescription className="text-emerald-200">Scaffold → Transmutation → Stabilization</SheetDescription>
         </SheetHeader>
         <nav className="mt-8 space-y-2">
           {routes.map((route) => {
