@@ -29,6 +29,7 @@ import {
 
 const routes = [
   { name: "Home", path: "/", icon: Home },
+  { name: "Transmutation Dashboard", path: "/dashboard", icon: Activity },
   { name: "Transformation Roadmap", path: "/transformation", icon: Rocket },
   { name: "Events Pipeline", path: "/events", icon: CalendarDays },
   { name: "MR Demo", path: "/mr-demo", icon: Hand },
