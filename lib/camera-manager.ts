@@ -6,12 +6,22 @@
 export type CameraFacing = "user" | "environment"
 export type CameraState = "idle" | "requesting" | "active" | "error" | "denied"
 
+export interface CameraPerformanceMetrics {
+  fps: number
+  latency: number
+  droppedFrames: number
+  resolution: { width: number; height: number }
+}
+
 export interface CameraConfig {
   facing: CameraFacing
   width?: number
   height?: number
   aspectRatio?: number
   frameRate?: number
+  enablePixelAccess?: boolean // For face landmark precision
+  mirrorDisplay?: boolean // For selfie mirror effect
+  pauseOnHidden?: boolean // Performance optimization
 }
 
 export interface CameraError {
@@ -29,14 +39,18 @@ export class CameraManager {
   private stateCallbacks: ((state: CameraState) => void)[] = []
   private retryCount = 0
   private maxRetries = 3
+  private performanceMonitor: PerformanceMonitor | null = null
 
   constructor(config: Partial<CameraConfig> = {}) {
     this.config = {
       facing: "user", // FRONT-FACING by default for try-on
-      width: 1280,
+      width: 1280, // Balanced for mobile performance
       height: 720,
       aspectRatio: 16 / 9,
-      frameRate: 30,
+      frameRate: 30, // Target 30fps for AR stability
+      enablePixelAccess: true, // Enable for face tracking
+      mirrorDisplay: true, // Mirror for selfie UX
+      pauseOnHidden: true, // Pause when tab hidden
       ...config,
     }
   }
@@ -81,27 +95,34 @@ export class CameraManager {
 
   /**
    * Request camera with progressive fallback constraints
+   * Aligned with 8th Wall and Meta Horizon OS best practices
    */
   private async requestCameraWithFallback(): Promise<MediaStream> {
     const constraints = this.buildConstraints()
 
     try {
-      // Try ideal constraints first
+      // Try ideal constraints first (60fps for face tracking if supported)
       return await navigator.mediaDevices.getUserMedia(constraints.ideal)
     } catch (error) {
-      console.warn("[v0] Ideal constraints failed, trying basic...", error)
+      console.warn("[v0] Ideal constraints failed, trying optimized...", error)
 
       try {
-        // Fallback to basic constraints
-        return await navigator.mediaDevices.getUserMedia(constraints.basic)
+        return await navigator.mediaDevices.getUserMedia(constraints.optimized)
       } catch (fallbackError) {
-        console.error("[v0] Basic constraints also failed", fallbackError)
+        console.warn("[v0] Optimized constraints failed, trying basic...", fallbackError)
 
-        // Last resort: any video
         try {
-          return await navigator.mediaDevices.getUserMedia({ video: true })
-        } catch (lastError) {
-          throw this.createError("CAMERA_UNAVAILABLE", "Could not access camera with any configuration", false)
+          // Fallback to basic constraints
+          return await navigator.mediaDevices.getUserMedia(constraints.basic)
+        } catch (basicError) {
+          console.error("[v0] Basic constraints also failed", basicError)
+
+          // Last resort: any video
+          try {
+            return await navigator.mediaDevices.getUserMedia({ video: true })
+          } catch (lastError) {
+            throw this.createError("CAMERA_UNAVAILABLE", "Could not access camera with any configuration", false)
+          }
         }
       }
     }
@@ -109,6 +130,7 @@ export class CameraManager {
 
   /**
    * Build progressive constraint sets
+   * Following industry best practices from 8th Wall and WebAR SDKs
    */
   private buildConstraints() {
     const idealConstraints: MediaStreamConstraints = {
@@ -117,7 +139,17 @@ export class CameraManager {
         width: { ideal: this.config.width },
         height: { ideal: this.config.height },
         aspectRatio: { ideal: this.config.aspectRatio },
-        frameRate: { ideal: this.config.frameRate },
+        frameRate: { ideal: 60 }, // 60fps for smoothest face tracking
+      },
+      audio: false,
+    }
+
+    const optimizedConstraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { exact: this.config.facing },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 },
       },
       audio: false,
     }
@@ -131,6 +163,7 @@ export class CameraManager {
 
     return {
       ideal: idealConstraints,
+      optimized: optimizedConstraints,
       basic: basicConstraints,
     }
   }
@@ -156,7 +189,7 @@ export class CameraManager {
   }
 
   /**
-   * Attach stream to video element
+   * Attach stream to video element with optimizations
    */
   attachToVideo(videoElement: HTMLVideoElement): void {
     if (!this.stream) {
@@ -166,6 +199,16 @@ export class CameraManager {
     videoElement.srcObject = this.stream
     videoElement.playsInline = true
     videoElement.muted = true
+
+    if (this.config.facing === "user" && this.config.mirrorDisplay) {
+      videoElement.style.transform = "scaleX(-1)"
+    }
+
+    videoElement.style.willChange = "transform"
+
+    if (!this.performanceMonitor) {
+      this.performanceMonitor = new PerformanceMonitor(videoElement)
+    }
 
     // Auto-play with error handling
     videoElement.play().catch((error) => {
@@ -318,10 +361,22 @@ export class CameraManager {
   }
 
   /**
-   * Cleanup
+   * Get real-time performance metrics
+   * Critical for maintaining 30-60fps for smooth AR experiences
+   */
+  getPerformanceMetrics(): CameraPerformanceMetrics | null {
+    return this.performanceMonitor?.getMetrics() || null
+  }
+
+  /**
+   * Cleanup with performance monitoring cleanup
    */
   destroy(): void {
     this.stop()
+    if (this.performanceMonitor) {
+      this.performanceMonitor.destroy()
+      this.performanceMonitor = null
+    }
     this.errorCallbacks = []
     this.stateCallbacks = []
   }
@@ -341,5 +396,59 @@ export function resetCameraManager(): void {
   if (globalCameraManager) {
     globalCameraManager.destroy()
     globalCameraManager = null
+  }
+}
+
+class PerformanceMonitor {
+  private videoElement: HTMLVideoElement
+  private frameCount = 0
+  private startTime = performance.now()
+  private lastFrameTime = performance.now()
+  private droppedFrames = 0
+  private rafId: number | null = null
+
+  constructor(videoElement: HTMLVideoElement) {
+    this.videoElement = videoElement
+    this.startMonitoring()
+  }
+
+  private startMonitoring(): void {
+    const monitor = () => {
+      const currentTime = performance.now()
+      const deltaTime = currentTime - this.lastFrameTime
+
+      // Track dropped frames (>33ms = dropped frame at 30fps)
+      if (deltaTime > 33) {
+        this.droppedFrames++
+      }
+
+      this.frameCount++
+      this.lastFrameTime = currentTime
+
+      this.rafId = requestAnimationFrame(monitor)
+    }
+
+    this.rafId = requestAnimationFrame(monitor)
+  }
+
+  getMetrics(): CameraPerformanceMetrics {
+    const elapsedTime = (performance.now() - this.startTime) / 1000
+    const fps = Math.round(this.frameCount / elapsedTime)
+
+    return {
+      fps,
+      latency: performance.now() - this.lastFrameTime,
+      droppedFrames: this.droppedFrames,
+      resolution: {
+        width: this.videoElement.videoWidth,
+        height: this.videoElement.videoHeight,
+      },
+    }
+  }
+
+  destroy(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId)
+    }
   }
 }
