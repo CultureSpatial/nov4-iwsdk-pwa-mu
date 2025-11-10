@@ -1,229 +1,79 @@
-# Environment Variables Guide
+# Environment Variables Configuration
 
-## Overview
+## Required Variables
 
-This document lists all environment variables used in the Cultural AR Pilot project and their current status.
+Add these environment variables in the **Vars** section of the v0 sidebar:
 
-## Currently Available (Auto-provided by Vercel)
-
-These are automatically set by Vercel and require no configuration:
-
-- `VERCEL_GIT_COMMIT_SHA` - Git commit SHA for the deployment
-- `VERCEL_GIT_COMMIT_REF` - Git branch/ref for the deployment
-- `NEXT_PUBLIC_VERCEL_ANALYTICS_ID` - Vercel Analytics ID (production only)
-
-## Feature Flags (Can Be Set Now)
-
-Control which features are enabled in the application:
+### Analytics (Dual Stack)
 
 \`\`\`bash
-# Photo Booth Feature
-NEXT_PUBLIC_ENABLE_PHOTO_BOOTH=true
+# Amplitude - Product Analytics
+NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_api_key_here
 
-# Cocktail Menu Feature
-NEXT_PUBLIC_ENABLE_COCKTAIL_MENU=true
-
-# Polls Feature
-NEXT_PUBLIC_ENABLE_POLLS=true
-
-# Q&A Feature
-NEXT_PUBLIC_ENABLE_QA=true
+# Customer.io - Marketing Automation (already configured)
+NEXT_PUBLIC_CUSTOMERIO_SITE_ID=your_customerio_site_id
+CUSTOMERIO_API_KEY=your_customerio_api_key
 \`\`\`
 
-**Default:** All features are enabled by default if not specified.
-
-## Event Configuration (Can Be Set Now)
-
-Configure event-specific settings:
+### Optional (8th Wall - iOS AR Fallback)
 
 \`\`\`bash
-# Event date in YYYY-MM-DD format
-NEXT_PUBLIC_EVENT_DATE=2025-11-04
-
-# Event name for tracking and analytics
-NEXT_PUBLIC_EVENT_NAME=nov4_event
-
-# Campaign tracking for QR codes
-NEXT_PUBLIC_UTM_CAMPAIGN=nov4_event
+NEXT_PUBLIC_8THWALL_APP_KEY=your_8thwall_app_key
 \`\`\`
 
-## Customer.io Integration (Webhook-based)
+## How to Get API Keys
 
-For user journey tracking and engagement campaigns:
+### Amplitude
+1. Go to https://amplitude.com
+2. Sign up or log in
+3. Create a new project or select existing
+4. Go to Settings → Projects → [Your Project]
+5. Copy the API Key
+6. Paste as `NEXT_PUBLIC_AMPLITUDE_API_KEY`
 
-\`\`\`bash
-# Site ID (safe to expose on client)
-NEXT_PUBLIC_CUSTOMERIO_SITE_ID=your_site_id_here
+### Customer.io (Already Setup)
+Your Customer.io integration is already configured via the existing environment variables.
 
-# API Key (server-side only, NEVER expose to client)
-CUSTOMERIO_API_KEY=your_api_key_here
+### 8th Wall (Optional)
+Only needed if you want iOS Safari AR support:
+1. Go to https://www.8thwall.com
+2. Create account and workspace
+3. Create new project
+4. Copy App Key from project settings
+5. Add approved domains in project settings
+
+## How to Add Variables in v0
+
+1. Click the **sidebar icon** (left side of chat)
+2. Select **"Vars"**
+3. Click **"Add Variable"**
+4. Enter variable name (e.g., `NEXT_PUBLIC_AMPLITUDE_API_KEY`)
+5. Paste your API key value
+6. Click **Save**
+
+Variables are immediately available to your deployed app - no restart needed.
+
+## Verification
+
+After adding variables, check the browser console on your deployed site:
+
+\`\`\`
+[v0] Amplitude initialized
+[v0] Event tracked: ar_session_started
 \`\`\`
 
-**How to get these:**
-1. Sign up at [Customer.io](https://customer.io)
-2. Go to Settings → API Credentials
-3. Copy Site ID and API Key
-4. Add to Vercel environment variables
+Visit `/dashboard` to see unified analytics from both platforms.
 
-**Features enabled:**
-- User identification and tracking
-- Event tracking (photo captures, menu views, etc.)
-- Transactional emails
-- Segment management
-- Automated follow-up campaigns
+## Security Notes
 
-**Implementation:** Uses webhook pattern via `/api/track` endpoint for security.
+- `NEXT_PUBLIC_*` variables are exposed to the browser (safe for client-side SDKs)
+- `CUSTOMERIO_API_KEY` (without NEXT_PUBLIC_) stays server-side only
+- Never commit API keys to git - use v0 Vars or Vercel environment variables
 
-## Optional Integrations
+## Platform-Specific Setup
 
-### Database (Choose One)
+### Meta Horizon
+No additional environment variables needed. Horizon scripts call your web API endpoints using the production URL.
 
-#### Supabase
-\`\`\`bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-\`\`\`
-
-**Use for:** User data, photo storage, real-time features
-
-#### Neon
-\`\`\`bash
-DATABASE_URL=postgresql://user:pass@host/db
-\`\`\`
-
-**Use for:** PostgreSQL database with serverless scaling
-
-### Caching & Real-time
-
-#### Upstash Redis
-\`\`\`bash
-UPSTASH_REDIS_REST_URL=your_redis_url
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
-\`\`\`
-
-**Use for:** Session management, real-time features, caching
-
-### Payments (If Needed)
-
-#### Stripe
-\`\`\`bash
-STRIPE_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-\`\`\`
-
-**Use for:** Ticketing, merchandise sales, premium features
-
-### AI Features (If Needed)
-
-#### Groq
-\`\`\`bash
-GROQ_API_KEY=your_groq_key
-\`\`\`
-
-#### xAI (Grok)
-\`\`\`bash
-XAI_API_KEY=your_xai_key
-\`\`\`
-
-**Use for:** AI-powered features, chatbots, content generation
-
-## Setting Environment Variables
-
-### Local Development
-
-Create a `.env.local` file in the project root:
-
-\`\`\`bash
-# Copy from .env.example
-cp .env.example .env.local
-
-# Edit with your values
-nano .env.local
-\`\`\`
-
-### Vercel Deployment
-
-1. Go to your project in Vercel dashboard
-2. Navigate to Settings → Environment Variables
-3. Add each variable with appropriate scope:
-   - **Production** - Live environment
-   - **Preview** - Pull request previews
-   - **Development** - Local development
-
-### Via Vercel CLI
-
-\`\`\`bash
-# Set a single variable
-vercel env add NEXT_PUBLIC_EVENT_DATE
-
-# Pull environment variables to local
-vercel env pull .env.local
-\`\`\`
-
-## Security Best Practices
-
-### Public Variables (NEXT_PUBLIC_*)
-- Safe to expose to client
-- Visible in browser
-- Use for: Feature flags, public IDs, event config
-
-### Private Variables (No prefix)
-- Server-side only
-- Never exposed to client
-- Use for: API keys, secrets, database credentials
-
-### Never Commit
-- `.env.local` - Local development
-- `.env` - Any environment file with real values
-- Always use `.env.example` for templates
-
-## Validation
-
-The application validates required environment variables at runtime:
-
-- Missing optional variables log warnings
-- Missing required variables prevent deployment
-- Invalid values are caught early with clear error messages
-
-## Current Status Summary
-
-| Variable | Status | Required | Notes |
-|----------|--------|----------|-------|
-| Feature Flags | ✅ Can set now | No | Defaults to true |
-| Event Config | ✅ Can set now | No | Has defaults |
-| Customer.io | ⏳ Needs setup | Optional | For tracking |
-| Database | ⏳ Not configured | Optional | For persistence |
-| Redis | ⏳ Not configured | Optional | For caching |
-| Stripe | ⏳ Not configured | Optional | For payments |
-| AI Keys | ⏳ Not configured | Optional | For AI features |
-
-## Recommended Setup for Nov 4 Event
-
-**Minimum (No setup required):**
-- Use default feature flags
-- Use default event config
-- Vercel Analytics (auto-enabled)
-
-**Recommended (15 min setup):**
-- Customer.io for user tracking
-- Feature flags for A/B testing
-
-**Optional (30+ min setup):**
-- Supabase for photo storage
-- Upstash for real-time features
-- Stripe for ticketing
-
-## Troubleshooting
-
-### Variable not working?
-1. Check spelling (case-sensitive)
-2. Verify `NEXT_PUBLIC_` prefix for client-side
-3. Restart dev server after changes
-4. Redeploy on Vercel after changes
-
-### Still having issues?
-1. Check Vercel deployment logs
-2. Verify variable scope (Production/Preview/Development)
-3. Check for typos in variable names
-4. Ensure no trailing spaces in values
+### Universal AR (Zappar Mattercraft)
+Uses the same web-based analytics - no separate API keys required.

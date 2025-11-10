@@ -1,277 +1,195 @@
-import { track } from "@vercel/analytics"
+"use client"
 
-/**
- * Analytics utility for tracking Cultural AR Pilot events
- * Tracks technical metrics, engagement analytics, and success indicators
- */
+import * as amplitude from "@amplitude/analytics-browser"
 
-// ============================================================================
-// TECHNICAL METRICS
-// ============================================================================
+let amplitudeInitialized = false
 
-export function trackFrameRate(fps: number) {
-  track("technical_frame_rate", {
-    fps,
-    target: 60,
-    status: fps >= 60 ? "optimal" : fps >= 30 ? "acceptable" : "poor",
-  })
-}
+export function initializeAmplitude() {
+  if (typeof window === "undefined" || amplitudeInitialized) return
 
-export function trackTrackingAccuracy(driftMm: number) {
-  track("technical_tracking_accuracy", {
-    drift_mm: driftMm,
-    target: 5,
-    status: driftMm < 5 ? "optimal" : driftMm < 10 ? "acceptable" : "poor",
-  })
-}
-
-export function trackLoadTime(assetName: string, loadTimeMs: number) {
-  track("technical_load_time", {
-    asset: assetName,
-    load_time_ms: loadTimeMs,
-    load_time_s: (loadTimeMs / 1000).toFixed(2),
-    target_s: 3,
-    status: loadTimeMs < 3000 ? "optimal" : loadTimeMs < 5000 ? "acceptable" : "poor",
-  })
-}
-
-export function trackNetworkLatency(latencyMs: number) {
-  track("technical_network_latency", {
-    latency_ms: latencyMs,
-    target_ms: 50,
-    status: latencyMs < 50 ? "optimal" : latencyMs < 100 ? "acceptable" : "poor",
-  })
-}
-
-// ============================================================================
-// ENGAGEMENT ANALYTICS
-// ============================================================================
-
-export function trackSessionStart(
-  sessionId: string,
-  deviceInfo: {
-    userAgent: string
-    platform: string
-    webxrSupported: boolean
-  },
-) {
-  track("engagement_session_start", {
-    session_id: sessionId,
-    ...deviceInfo,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackSessionEnd(sessionId: string, durationSeconds: number) {
-  track("engagement_session_end", {
-    session_id: sessionId,
-    duration_seconds: durationSeconds,
-    duration_minutes: (durationSeconds / 60).toFixed(2),
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackInteraction(interactionType: string, details?: Record<string, any>) {
-  track("engagement_interaction", {
-    type: interactionType,
-    ...details,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackQuestionSubmitted(question: string, quality: "high" | "medium" | "low") {
-  track("engagement_question_submitted", {
-    question_length: question.length,
-    quality,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackFollowUpRequest(requestType: string) {
-  track("engagement_follow_up_request", {
-    type: requestType,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-// ============================================================================
-// EXPERIENCE EVENTS
-// ============================================================================
-
-export function trackPWAInstalled() {
-  track("pwa_installed", {
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackExperienceStarted(experienceType: "webxr" | "2d_fallback") {
-  track("experience_started", {
-    type: experienceType,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackPhotoCaptured(filterUsed?: string) {
-  track("photo_captured", {
-    filter: filterUsed || "none",
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackMenuItemViewed(itemName: string) {
-  track("menu_item_viewed", {
-    item: itemName,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackPollVoted(pollId: string, option: string) {
-  track("poll_voted", {
-    poll_id: pollId,
-    option,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackShareClicked(shareType: "photo" | "experience" | "menu") {
-  track("share_clicked", {
-    type: shareType,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-// ============================================================================
-// SUCCESS INDICATORS
-// ============================================================================
-
-export function trackTechnicalInterruption(errorType: string, errorMessage: string) {
-  track("technical_interruption", {
-    error_type: errorType,
-    error_message: errorMessage,
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackEngagementScore(score: number, maxScore = 5) {
-  track("engagement_score", {
-    score,
-    max_score: maxScore,
-    percentage: ((score / maxScore) * 100).toFixed(1),
-    timestamp: new Date().toISOString(),
-  })
-}
-
-export function trackFeedback(rating: number, comment?: string) {
-  track("feedback_submitted", {
-    rating,
-    max_rating: 5,
-    has_comment: !!comment,
-    sentiment: rating >= 4 ? "positive" : rating >= 3 ? "neutral" : "negative",
-    timestamp: new Date().toISOString(),
-  })
-}
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Generate a unique session ID
- */
-export function generateSessionId(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-}
-
-/**
- * Get device information for analytics
- */
-export function getDeviceInfo() {
-  return {
-    userAgent: navigator.userAgent,
-    platform: navigator.platform,
-    webxrSupported: "xr" in navigator,
+  const apiKey = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY
+  if (apiKey) {
+    amplitude.init(apiKey, {
+      defaultTracking: {
+        sessions: true,
+        pageViews: true,
+        formInteractions: true,
+        fileDownloads: true,
+      },
+    })
+    amplitudeInitialized = true
+    console.log("[v0] Amplitude initialized")
   }
 }
 
-/**
- * Performance monitoring utility
- */
-export class PerformanceMonitor {
-  private frameCount = 0
-  private lastFrameTime = performance.now()
-  private fpsHistory: number[] = []
-
-  startFrameRateMonitoring(intervalMs = 1000) {
-    setInterval(() => {
-      const currentTime = performance.now()
-      const deltaTime = currentTime - this.lastFrameTime
-      const fps = Math.round((this.frameCount * 1000) / deltaTime)
-
-      this.fpsHistory.push(fps)
-      if (this.fpsHistory.length > 10) {
-        this.fpsHistory.shift()
-      }
-
-      trackFrameRate(fps)
-
-      this.frameCount = 0
-      this.lastFrameTime = currentTime
-    }, intervalMs)
-  }
-
-  recordFrame() {
-    this.frameCount++
-  }
-
-  getAverageFPS(): number {
-    if (this.fpsHistory.length === 0) return 0
-    return Math.round(this.fpsHistory.reduce((a, b) => a + b, 0) / this.fpsHistory.length)
-  }
+export interface AnalyticsEvent {
+  event: string
+  properties?: Record<string, any>
+  userId?: string
+  platform?: "web" | "horizon" | "mobile"
 }
 
-/**
- * Session tracking utility
- */
-export class SessionTracker {
-  private sessionId: string
-  private startTime: number
-  private interactionCount = 0
+export function trackEvent(data: AnalyticsEvent) {
+  const { event, properties = {}, userId, platform = "web" } = data
 
-  constructor() {
-    this.sessionId = generateSessionId()
-    this.startTime = Date.now()
-    trackSessionStart(this.sessionId, getDeviceInfo())
+  // Add platform context
+  const enrichedProperties = {
+    ...properties,
+    platform,
+    timestamp: new Date().toISOString(),
+    url: typeof window !== "undefined" ? window.location.href : undefined,
   }
 
-  recordInteraction(type: string, details?: Record<string, any>) {
-    this.interactionCount++
-    trackInteraction(type, {
-      ...details,
-      interaction_number: this.interactionCount,
+  // Track to Amplitude
+  if (amplitudeInitialized) {
+    if (userId) {
+      amplitude.setUserId(userId)
+    }
+    amplitude.track(event, enrichedProperties)
+  }
+
+  // Track to Customer.io via API route
+  if (typeof window !== "undefined") {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: userId || "anonymous",
+        event,
+        properties: enrichedProperties,
+      }),
+    }).catch((error) => {
+      console.error("[v0] Failed to track to Customer.io:", error)
     })
   }
 
-  endSession() {
-    const durationSeconds = Math.round((Date.now() - this.startTime) / 1000)
-    trackSessionEnd(this.sessionId, durationSeconds)
-  }
-
-  getSessionId(): string {
-    return this.sessionId
-  }
-
-  getInteractionCount(): number {
-    return this.interactionCount
-  }
+  console.log("[v0] Event tracked:", event, enrichedProperties)
 }
 
-/**
- * Generic event tracking function
- * Use this for custom events not covered by specific tracking functions
- */
-export function trackEvent(eventName: string, properties?: Record<string, any>) {
-  track(eventName, {
-    ...properties,
-    timestamp: new Date().toISOString(),
-  })
+export function identifyUser(userId: string, traits?: Record<string, any>) {
+  // Amplitude identification
+  if (amplitudeInitialized) {
+    amplitude.setUserId(userId)
+    if (traits) {
+      const identify = new amplitude.Identify()
+      Object.entries(traits).forEach(([key, value]) => {
+        identify.set(key, value)
+      })
+      amplitude.identify(identify)
+    }
+  }
+
+  // Customer.io identification via API
+  if (typeof window !== "undefined") {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "identify",
+        userId,
+        traits: {
+          ...traits,
+          platform: "web",
+          identified_at: new Date().toISOString(),
+        },
+      }),
+    }).catch((error) => {
+      console.error("[v0] Failed to identify user to Customer.io:", error)
+    })
+  }
+
+  console.log("[v0] User identified:", userId, traits)
+}
+
+export const Analytics = {
+  // AR Experience Events
+  arSessionStarted: (platform: "web" | "horizon" | "mobile", sessionId: string) =>
+    trackEvent({
+      event: "ar_session_started",
+      properties: { session_id: sessionId },
+      platform,
+    }),
+
+  arSessionEnded: (platform: "web" | "horizon" | "mobile", sessionId: string, duration: number) =>
+    trackEvent({
+      event: "ar_session_ended",
+      properties: { session_id: sessionId, duration_seconds: duration },
+      platform,
+    }),
+
+  // Photo Booth Events
+  photoCaptured: (platform: "web" | "horizon" | "mobile", filterId?: string) =>
+    trackEvent({
+      event: "photo_captured",
+      properties: { filter_id: filterId },
+      platform,
+    }),
+
+  photoShared: (platform: "web" | "horizon" | "mobile", shareMethod: string) =>
+    trackEvent({
+      event: "photo_shared",
+      properties: { share_method: shareMethod },
+      platform,
+    }),
+
+  // Cocktail Menu Events
+  cocktailViewed: (platform: "web" | "horizon" | "mobile", cocktailId: string, cocktailName: string) =>
+    trackEvent({
+      event: "cocktail_viewed",
+      properties: { cocktail_id: cocktailId, cocktail_name: cocktailName },
+      platform,
+    }),
+
+  cocktailOrdered: (platform: "web" | "horizon" | "mobile", cocktailId: string, cocktailName: string, price: number) =>
+    trackEvent({
+      event: "cocktail_ordered",
+      properties: { cocktail_id: cocktailId, cocktail_name: cocktailName, price },
+      platform,
+    }),
+
+  // Gesture Interaction Events
+  gesturePerformed: (platform: "web" | "horizon" | "mobile", gestureType: string) =>
+    trackEvent({
+      event: "gesture_performed",
+      properties: { gesture_type: gestureType },
+      platform,
+    }),
+
+  // Conversion Events
+  gemScanned: (venueId: string, gemId: string) =>
+    trackEvent({
+      event: "gem_scanned",
+      properties: { venue_id: venueId, gem_id: gemId },
+      platform: "web",
+    }),
+
+  checkoutStarted: (amount: number, items: any[]) =>
+    trackEvent({
+      event: "checkout_started",
+      properties: { amount, items },
+      platform: "web",
+    }),
+
+  purchaseCompleted: (amount: number, orderId: string) =>
+    trackEvent({
+      event: "purchase_completed",
+      properties: { amount, order_id: orderId, revenue: amount },
+      platform: "web",
+    }),
+
+  // Horizon-specific Events
+  horizonWorldEntered: (worldId: string, userId?: string) =>
+    trackEvent({
+      event: "horizon_world_entered",
+      properties: { world_id: worldId },
+      userId,
+      platform: "horizon",
+    }),
+
+  horizonInteraction: (objectId: string, interactionType: string) =>
+    trackEvent({
+      event: "horizon_interaction",
+      properties: { object_id: objectId, interaction_type: interactionType },
+      platform: "horizon",
+    }),
 }
