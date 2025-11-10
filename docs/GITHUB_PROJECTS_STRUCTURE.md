@@ -4,6 +4,49 @@
 
 Comprehensive GitHub Projects structure for managing 6 parallel development tracks toward December 9 competition deadline and December 15 Royal Sonesta soft launch.
 
+## 🤖 Spec-Driven Development with GitHub Spec Kit
+
+This project uses **GitHub Spec Kit** methodology to enable AI-assisted systematic development through structured specifications.
+
+### Four-Phase Workflow
+
+**Phase 1: Specify**
+- Define high-level user journeys and outcomes
+- Document success criteria and milestones
+- Maintain living contract in PROJECT_SPEC.md
+
+**Phase 2: Plan**  
+- Technical architecture and stack decisions
+- API contracts and data models
+- Performance targets and constraints
+
+**Phase 3: Tasks**
+- Break specs into granular, reviewable tasks
+- Map dependencies and priorities
+- Estimate story points for velocity
+
+**Phase 4: Implement**
+- AI agents execute from task breakdown
+- Developers review focused changes
+- GitHub Projects tracks cross-track progress
+
+### Integration with GitHub Projects
+
+Spec Kit tasks map directly to GitHub Issues:
+- Each task becomes a tracked issue
+- Issues link back to spec documents
+- Progress visible in Timeline View
+- Automation moves cards through workflow
+
+### Using with AI (v0)
+
+Reference specs when requesting work:
+- "Implement camera fallback per TECHNICAL_PLAN.md Section 3.2"
+- "Update PROJECT_SPEC.md with new Tavus.io integration"
+- "Complete TASK-005 from competition track breakdown"
+
+This ensures AI-generated code aligns with documented architecture and requirements.
+
 ## Project Board Structure
 
 ### Board 1: 🚀 Emerald Gem Launch (Main)
@@ -447,6 +490,10 @@ This GitHub Projects structure ties directly to:
 - `/docs/CAMERA_ARCHITECTURE.md` - Camera implementation
 - `/docs/DUAL_ANALYTICS_STRATEGY.md` - Analytics approach
 - `/app/dashboard/page.tsx` - Real-time monitoring
+- **Spec Kit Docs:**
+  - `.github/spec-kit/PROJECT_SPEC.md` - Living specification
+  - `.github/spec-kit/TECHNICAL_PLAN.md` - Architecture decisions  
+  - `.github/spec-kit/TASK_BREAKDOWN.md` - Implementation tasks
 
 All issues should reference relevant documentation for context.
 
