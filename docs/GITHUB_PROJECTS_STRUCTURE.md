@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository uses GitHub Projects to manage the Emerald Gem AR Platform development across 6 parallel tracks, aligned with the December 9 Meta Horizon Start Developer Competition deadline and December 15 Royal Sonesta launch.
+This repository uses GitHub Projects to manage the Emerald Gem AR Platform development across 7 parallel tracks, aligned with the December 9 Meta Horizon Start Developer Competition deadline and December 15 Royal Sonesta launch.
 
 ## Project Board Structure
 
@@ -86,7 +86,7 @@ This repository uses GitHub Projects to manage the Emerald Gem AR Platform devel
 #### Track 6: Analytics & Optimization
 - Status: Active
 - Owner: Data Team
-- Tools: Amplitude, Customer.io
+- Tools: Amplitude, Customer.io, Interpretation Layer
 - Priority: P1
 
 **Metrics:**
@@ -95,6 +95,18 @@ This repository uses GitHub Projects to manage the Emerald Gem AR Platform devel
 - Platform comparison (web vs mobile vs VR)
 - Venue-specific performance
 - ROI tracking (285% target)
+
+#### Track 7: AI Asset Pipeline (New)
+- Status: Research / Planning
+- Owner: AI Team
+- Tech: Meta SAM 3D, Vespa.ai, Vapi.ai
+- Priority: P2 (P1 for Competition Award)
+
+**Key Components:**
+- SAM 3D integration for automated asset segmentation
+- Semantic labeling pipeline
+- Interpretation Layer schema implementation
+- Context-aware voice triggers (Ruby NPC)
 
 ## Issue Templates
 
@@ -122,6 +134,15 @@ name: Competition Task
 about: Meta Horizon Start Developer Competition task
 title: '[COMPETITION] '
 labels: ['competition', 'deadline:dec-9']
+assignees: ''
+\`\`\`
+
+### AI Asset Pipeline Task (.github/ISSUE_TEMPLATE/ai-asset-pipeline.md)
+\`\`\`yaml
+name: AI Asset Pipeline Task
+about: Task related to AI Asset Pipeline
+title: '[AI ASSET] '
+labels: ['ai-asset', 'needs-triage']
 assignees: ''
 \`\`\`
 
@@ -172,6 +193,7 @@ This project uses GitHub Spec Kit for AI-assisted development. Spec-kit document
 - `track:launch-ops`
 - `track:infrastructure`
 - `track:analytics`
+- `track:ai-asset-pipeline`
 
 ### Status
 - `status:backlog`
@@ -187,6 +209,7 @@ This project uses GitHub Spec Kit for AI-assisted development. Spec-kit document
 - `documentation`
 - `research`
 - `competition`
+- `ai-asset`
 
 ### Deadlines
 - `deadline:dec-9` - Competition submission
@@ -228,6 +251,7 @@ This project uses GitHub Spec Kit for AI-assisted development. Spec-kit document
 ### Auto-labeling
 - Issues with "bug" in title → add `bug` label
 - Issues with "competition" in title → add `competition` + `deadline:dec-9` labels
+- Issues with "ai asset" in title → add `ai-asset` label
 - PRs targeting `main` → require review
 
 ### Status Transitions
@@ -249,6 +273,7 @@ This project uses GitHub Spec Kit for AI-assisted development. Spec-kit document
 - Launch Ops: [status]
 - Infrastructure: [status]
 - Analytics: [status]
+- AI Asset Pipeline: [status]
 
 **Completed Yesterday:**
 - [Issue #] - Description
@@ -303,3 +328,4 @@ This project uses GitHub Spec Kit for AI-assisted development. Spec-kit document
 - **Competition Details:** `docs/META_HORIZON_CHALLENGE_STRATEGY.md`
 - **Analytics Strategy:** `docs/DUAL_ANALYTICS_STRATEGY.md`
 - **Camera Architecture:** `docs/CAMERA_ARCHITECTURE.md`
+- **AI Asset Pipeline Strategy:** `docs/AI_ASSET_PIPELINE_STRATEGY.md`
