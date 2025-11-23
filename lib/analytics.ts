@@ -27,20 +27,30 @@ export interface AnalyticsEvent {
   properties?: Record<string, any>
   userId?: string
   platform?: "web" | "horizon" | "mobile"
+  sovereigntyCompliant?: boolean
+  enableLDU?: boolean
 }
 
 export function trackEvent(data: AnalyticsEvent) {
-  const { event, properties = {}, userId, platform = "web" } = data
+  const { event, properties = {}, userId, platform = "web", sovereigntyCompliant = false, enableLDU = false } = data
 
-  // Add platform context
+  if (userId && !sovereigntyCompliant) {
+    // We can allow anonymous local events, or strictly block everything.
+    // For now, we allow the function to proceed but tag it as limited.
+    console.log("[v0] User opted out of sovereignty compliance, tracking limited:", event, properties)
+    return
+  }
+
   const enrichedProperties = {
     ...properties,
     platform,
     timestamp: new Date().toISOString(),
     url: typeof window !== "undefined" ? window.location.href : undefined,
+    data_processing_options: enableLDU ? ["LDU"] : [],
+    data_processing_options_country: enableLDU ? 1 : 0,
+    data_processing_options_state: enableLDU ? 1000 : 0,
   }
 
-  // Track to Amplitude
   if (amplitudeInitialized) {
     if (userId) {
       amplitude.setUserId(userId)
@@ -48,7 +58,6 @@ export function trackEvent(data: AnalyticsEvent) {
     amplitude.track(event, enrichedProperties)
   }
 
-  // Track to Customer.io via API route
   if (typeof window !== "undefined") {
     fetch("/api/track", {
       method: "POST",
@@ -67,7 +76,6 @@ export function trackEvent(data: AnalyticsEvent) {
 }
 
 export function identifyUser(userId: string, traits?: Record<string, any>) {
-  // Amplitude identification
   if (amplitudeInitialized) {
     amplitude.setUserId(userId)
     if (traits) {
@@ -79,7 +87,6 @@ export function identifyUser(userId: string, traits?: Record<string, any>) {
     }
   }
 
-  // Customer.io identification via API
   if (typeof window !== "undefined") {
     fetch("/api/track", {
       method: "POST",
@@ -101,8 +108,23 @@ export function identifyUser(userId: string, traits?: Record<string, any>) {
   console.log("[v0] User identified:", userId, traits)
 }
 
+export function requestDataDeletion(userId: string) {
+  if (typeof window !== "undefined") {
+    fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "delete_user_data",
+        userId,
+        timestamp: new Date().toISOString(),
+      }),
+    }).catch((error) => {
+      console.error("[v0] Failed to request data deletion:", error)
+    })
+  }
+}
+
 export const Analytics = {
-  // AR Experience Events
   arSessionStarted: (platform: "web" | "horizon" | "mobile", sessionId: string) =>
     trackEvent({
       event: "ar_session_started",
@@ -117,7 +139,6 @@ export const Analytics = {
       platform,
     }),
 
-  // Photo Booth Events
   photoCaptured: (platform: "web" | "horizon" | "mobile", filterId?: string) =>
     trackEvent({
       event: "photo_captured",
@@ -132,7 +153,6 @@ export const Analytics = {
       platform,
     }),
 
-  // Cocktail Menu Events
   cocktailViewed: (platform: "web" | "horizon" | "mobile", cocktailId: string, cocktailName: string) =>
     trackEvent({
       event: "cocktail_viewed",
@@ -147,7 +167,6 @@ export const Analytics = {
       platform,
     }),
 
-  // Gesture Interaction Events
   gesturePerformed: (platform: "web" | "horizon" | "mobile", gestureType: string) =>
     trackEvent({
       event: "gesture_performed",
@@ -155,7 +174,6 @@ export const Analytics = {
       platform,
     }),
 
-  // Conversion Events
   gemScanned: (venueId: string, gemId: string) =>
     trackEvent({
       event: "gem_scanned",
@@ -177,7 +195,6 @@ export const Analytics = {
       platform: "web",
     }),
 
-  // Horizon-specific Events
   horizonWorldEntered: (worldId: string, userId?: string) =>
     trackEvent({
       event: "horizon_world_entered",
