@@ -5,28 +5,375 @@ export interface AnalyticsEvent {
   properties?: Record<string, any>
   userId?: string
   platform?: "web" | "horizon" | "mobile"
-  sovereigntyCompliant?: boolean
-  enableLDU?: boolean
+  timestamp?: number
+  sessionId?: string
 }
 
-export function initializeAmplitude() {
-  // No-op - analytics removed
+// Session management
+let currentSessionId: string | null = null
+let sessionStartTime = 0
+const ringsViewedInSession: Set<string> = new Set()
+
+function getSessionId(): string {
+  if (!currentSessionId) {
+    currentSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    sessionStartTime = Date.now()
+  }
+  return currentSessionId
 }
 
-export function trackEvent(data: AnalyticsEvent) {
-  const { event, properties = {} } = data
-  console.log("[v0] Event tracked (local only):", event, properties)
+function getDeviceType(): string {
+  if (typeof navigator === "undefined") return "unknown"
+  const ua = navigator.userAgent.toLowerCase()
+  if (ua.includes("quest") || ua.includes("oculus")) return "quest"
+  if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) return "mobile"
+  return "desktop"
 }
 
-export function identifyUser(userId: string, traits?: Record<string, any>) {
-  console.log("[v0] User identified (local only):", userId, traits)
+// Offline queue for events when network is unavailable
+const offlineQueue: AnalyticsEvent[] = []
+
+async function sendToAmplitude(event: AnalyticsEvent): Promise<void> {
+  // Stub for Amplitude - would send to actual Amplitude SDK
+  console.log("[Analytics:Amplitude]", event.event, event.properties)
 }
 
-export function requestDataDeletion(userId: string) {
-  console.log("[v0] Data deletion requested (local only):", userId)
+async function sendToCustomerIO(event: AnalyticsEvent): Promise<void> {
+  // Stub for Customer.io - would send to actual Customer.io SDK
+  console.log("[Analytics:CustomerIO]", event.event, event.properties)
 }
 
+// Lifecycle events that should also go to Customer.io
+const LIFECYCLE_EVENTS = [
+  "session_start",
+  "session_end",
+  "ring_shortlisted",
+  "shortlist_viewed",
+  "appointment_requested",
+  "contact_initiated",
+]
+
+export async function trackEvent(data: AnalyticsEvent): Promise<void> {
+  const enrichedEvent: AnalyticsEvent = {
+    ...data,
+    timestamp: Date.now(),
+    sessionId: getSessionId(),
+    properties: {
+      ...data.properties,
+      device_type: getDeviceType(),
+      session_id: getSessionId(),
+    },
+  }
+
+  // Check network status
+  const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true
+
+  if (!isOnline) {
+    offlineQueue.push(enrichedEvent)
+    console.log("[Analytics] Queued offline:", enrichedEvent.event)
+    return
+  }
+
+  // Send to Amplitude (all events)
+  await sendToAmplitude(enrichedEvent)
+
+  // Send lifecycle events to Customer.io
+  if (LIFECYCLE_EVENTS.includes(enrichedEvent.event)) {
+    await sendToCustomerIO(enrichedEvent)
+  }
+
+  // Development logging
+  if (process.env.NODE_ENV === "development") {
+    console.log("[v0] Analytics:", enrichedEvent.event, enrichedEvent.properties)
+  }
+}
+
+// Flush offline queue when back online
+if (typeof window !== "undefined") {
+  window.addEventListener("online", async () => {
+    console.log("[Analytics] Back online, flushing queue:", offlineQueue.length)
+    while (offlineQueue.length > 0) {
+      const event = offlineQueue.shift()
+      if (event) await trackEvent(event)
+    }
+  })
+}
+
+// Initialize Amplitude (stub)
+export function initializeAmplitude(): void {
+  console.log("[v0] Analytics initialized")
+}
+
+// User identification
+export function identifyUser(userId: string, traits?: Record<string, any>): void {
+  console.log("[v0] User identified:", userId, traits)
+  trackEvent({
+    event: "user_identified",
+    userId,
+    properties: traits,
+    platform: "web",
+  })
+}
+
+// Data deletion request (GDPR compliance)
+export function requestDataDeletion(userId: string): void {
+  console.log("[v0] Data deletion requested:", userId)
+  trackEvent({
+    event: "data_deletion_requested",
+    userId,
+    platform: "web",
+  })
+}
+
+// Analytics helper object with all event methods
 export const Analytics = {
+  // ===== SESSION EVENTS =====
+  sessionStart: (entryPoint: "qr" | "url" | "meta_horizon") => {
+    sessionStartTime = Date.now()
+    ringsViewedInSession.clear()
+    trackEvent({
+      event: "session_start",
+      properties: {
+        entry_point: entryPoint,
+        device_type: getDeviceType(),
+      },
+      platform: "web",
+    })
+  },
+
+  sessionEnd: () => {
+    const duration = Math.round((Date.now() - sessionStartTime) / 1000)
+    trackEvent({
+      event: "session_end",
+      properties: {
+        duration_seconds: duration,
+        rings_viewed: ringsViewedInSession.size,
+      },
+      platform: "web",
+    })
+    currentSessionId = null
+  },
+
+  // ===== RING INTERACTION EVENTS =====
+  ringViewed: (ringId: string, ringName: string, viewDurationMs: number) => {
+    ringsViewedInSession.add(ringId)
+    trackEvent({
+      event: "ring_viewed",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        view_duration_ms: viewDurationMs,
+      },
+      platform: "web",
+    })
+  },
+
+  ringSelected: (ringId: string, ringName: string, source: "tap" | "click" | "voice") => {
+    trackEvent({
+      event: "ring_selected",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        source,
+      },
+      platform: "web",
+    })
+  },
+
+  ringDetailOpened: (ringId: string, ringName: string, previousRingId?: string) => {
+    trackEvent({
+      event: "ring_detail_opened",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        previous_ring_id: previousRingId,
+      },
+      platform: "web",
+    })
+  },
+
+  ringDetailClosed: (ringId: string, ringName: string, timeSpentMs: number) => {
+    trackEvent({
+      event: "ring_detail_closed",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        time_spent_ms: timeSpentMs,
+      },
+      platform: "web",
+    })
+  },
+
+  ringRotated: (ringId: string, rotationDegrees: number) => {
+    trackEvent({
+      event: "ring_rotated",
+      properties: {
+        ring_id: ringId,
+        rotation_degrees: rotationDegrees,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== SHORTLIST EVENTS =====
+  ringShortlisted: (ringId: string, ringName: string, method: "button" | "drag") => {
+    trackEvent({
+      event: "ring_shortlisted",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        method,
+      },
+      platform: "web",
+    })
+  },
+
+  ringRemovedFromShortlist: (ringId: string, ringName: string) => {
+    trackEvent({
+      event: "ring_removed_from_shortlist",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+      },
+      platform: "web",
+    })
+  },
+
+  shortlistViewed: (ringCount: number) => {
+    trackEvent({
+      event: "shortlist_viewed",
+      properties: {
+        ring_count: ringCount,
+      },
+      platform: "web",
+    })
+  },
+
+  shortlistCleared: (ringCount: number) => {
+    trackEvent({
+      event: "shortlist_cleared",
+      properties: {
+        ring_count: ringCount,
+      },
+      platform: "web",
+    })
+  },
+
+  shortlistShared: (ringCount: number, shareMethod: string) => {
+    trackEvent({
+      event: "shortlist_shared",
+      properties: {
+        ring_count: ringCount,
+        share_method: shareMethod,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== AR/XR EVENTS =====
+  xrModeEntered: (mode: "ar" | "vr", deviceType: string) => {
+    trackEvent({
+      event: "xr_mode_entered",
+      properties: {
+        mode,
+        device_type: deviceType,
+      },
+      platform: "web",
+    })
+  },
+
+  xrModeExited: (durationMs: number) => {
+    trackEvent({
+      event: "xr_mode_exited",
+      properties: {
+        duration_ms: durationMs,
+      },
+      platform: "web",
+    })
+  },
+
+  tryInArClicked: (ringId: string, ringName: string) => {
+    trackEvent({
+      event: "try_in_ar_clicked",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== CAMERA/PERMISSION EVENTS =====
+  cameraPermissionRequested: () => {
+    trackEvent({
+      event: "camera_permission_requested",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  cameraPermissionGranted: () => {
+    trackEvent({
+      event: "camera_permission_granted",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  cameraPermissionDenied: () => {
+    trackEvent({
+      event: "camera_permission_denied",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  // ===== PERFORMANCE EVENTS =====
+  fpsDropDetected: (avgFps: number, minFps: number, duration: number) => {
+    trackEvent({
+      event: "fps_drop_detected",
+      properties: {
+        avg_fps: avgFps,
+        min_fps: minFps,
+        duration_seconds: duration,
+      },
+      platform: "web",
+    })
+  },
+
+  performanceModeEnabled: (reason: string) => {
+    trackEvent({
+      event: "performance_mode_enabled",
+      properties: {
+        reason,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== CONVERSION EVENTS =====
+  contactInitiated: (method: "email" | "phone" | "chat") => {
+    trackEvent({
+      event: "contact_initiated",
+      properties: {
+        method,
+      },
+      platform: "web",
+    })
+  },
+
+  appointmentRequested: (ringIds: string[]) => {
+    trackEvent({
+      event: "appointment_requested",
+      properties: {
+        ring_ids: ringIds,
+        ring_count: ringIds.length,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== LEGACY EVENTS (kept for compatibility) =====
   arSessionStarted: (platform: "web" | "horizon" | "mobile", sessionId: string) =>
     trackEvent({
       event: "ar_session_started",

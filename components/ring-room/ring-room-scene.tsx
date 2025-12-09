@@ -2,19 +2,30 @@
 
 import { Suspense, useState, useMemo, useCallback, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
-import { OrbitControls, Environment, ContactShadows, PerspectiveCamera, Html, AdaptiveDpr } from "@react-three/drei"
+import {
+  OrbitControls,
+  Environment,
+  ContactShadows,
+  PerspectiveCamera,
+  Html,
+  AdaptiveDpr,
+  Text,
+} from "@react-three/drei"
 import { RingModel } from "./ring-model"
 import { RingDetailPanel } from "./ring-detail-panel"
 import { ShortlistTray } from "./shortlist-tray"
 import { PerformanceMonitor } from "./performance-monitor"
-import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
+import { RING_CATALOG } from "@/lib/ring-data"
+import { shortlistManager } from "@/lib/shortlist-manager"
+import { Analytics } from "@/lib/analytics"
 import { useSyncExternalStore } from "react"
 
-// Create singleton shortlist manager
-const shortlistManager = createShortlistManager()
-
 function useShortlist() {
-  return useSyncExternalStore(shortlistManager.subscribe, shortlistManager.getItems, shortlistManager.getItems)
+  return useSyncExternalStore(
+    shortlistManager.subscribe.bind(shortlistManager),
+    shortlistManager.getAll.bind(shortlistManager),
+    shortlistManager.getAll.bind(shortlistManager),
+  )
 }
 
 function useQuestDetection() {
@@ -48,33 +59,83 @@ function LoadingFallback() {
   )
 }
 
+function GoldTestBox() {
+  return (
+    <group>
+      <mesh position={[0, 1.2, -0.25]}>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          metalness={0.9}
+          roughness={0.1}
+          emissive="#FFD700"
+          emissiveIntensity={0.3}
+        />
+      </mesh>
+      <Text position={[0, 1.6, -0.25]} fontSize={0.08} color="#FFD700" anchorX="center">
+        Phase 1: IWSDK Test
+      </Text>
+    </group>
+  )
+}
+
 export function RingRoomScene() {
   const [selectedRingId, setSelectedRingId] = useState<string | null>(null)
   const [isDraggingAny, setIsDraggingAny] = useState(false)
   const [showAddedFeedback, setShowAddedFeedback] = useState<string | null>(null)
   const [showPerf, setShowPerf] = useState(false)
+  const [qualityLevel, setQualityLevel] = useState<"high" | "medium" | "low">("high")
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
 
-  const quality = isQuest ? "medium" : "high"
+  useEffect(() => {
+    shortlistManager.hydrate(RING_CATALOG)
+    Analytics.sessionStart("url")
+
+    return () => {
+      Analytics.sessionEnd()
+    }
+  }, [])
+
+  const quality = isQuest ? "medium" : qualityLevel
 
   const selectedRing = useMemo(() => RING_CATALOG.find((r) => r.id === selectedRingId), [selectedRingId])
 
   const isInShortlist = useCallback(
-    (ringId: string) => shortlistItems.some((item) => item.ring.id === ringId),
-    [shortlistItems],
+    (ringId: string) => shortlistManager.has(ringId),
+    [shortlistItems], // Re-evaluate when shortlist changes
   )
 
-  const handleDragToShortlist = useCallback(
-    (ring: (typeof RING_CATALOG)[0]) => {
-      if (!isInShortlist(ring.id)) {
-        shortlistManager.add(ring)
-        setShowAddedFeedback(ring.id)
-        setTimeout(() => setShowAddedFeedback(null), 1500)
+  const handleDragToShortlist = useCallback((ring: (typeof RING_CATALOG)[0]) => {
+    const added = shortlistManager.add(ring, "drag")
+    if (added) {
+      setShowAddedFeedback(ring.id)
+      setTimeout(() => setShowAddedFeedback(null), 1500)
+      // Haptic feedback
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(100)
       }
+    }
+  }, [])
+
+  const handleRingSelect = useCallback(
+    (ringId: string) => {
+      const ring = RING_CATALOG.find((r) => r.id === ringId)
+      if (ring) {
+        Analytics.ringSelected(ringId, ring.name, "click")
+      }
+      setSelectedRingId(selectedRingId === ringId ? null : ringId)
     },
-    [isInShortlist],
+    [selectedRingId],
   )
+
+  const handleNavigate = useCallback((ringId: string) => {
+    setSelectedRingId(ringId)
+  }, [])
+
+  const handlePerformanceDegraded = useCallback((level: "medium" | "low") => {
+    setQualityLevel(level)
+  }, [])
 
   // Position rings in a semi-circle
   const ringPositions: [number, number, number][] = [
@@ -95,7 +156,7 @@ export function RingRoomScene() {
       {/* 3D Canvas with performance optimizations */}
       <Canvas
         gl={{
-          antialias: !isQuest,
+          antialias: quality !== "low",
           powerPreference: "high-performance",
           alpha: false,
         }}
@@ -105,26 +166,18 @@ export function RingRoomScene() {
 
         <PerspectiveCamera makeDefault position={[0, 1.5, 3]} fov={50} />
 
-        {/* Lighting - reduced on Quest */}
-        <ambientLight intensity={isQuest ? 0.5 : 0.4} />
-        <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow={!isQuest} />
-        {!isQuest && <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />}
-        {!isQuest && <pointLight position={[0, 3, 0]} intensity={0.3} color="#fff5e6" />}
+        {/* Lighting - reduced on Quest or low quality */}
+        <ambientLight intensity={quality === "low" ? 0.6 : 0.4} />
+        <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow={quality === "high"} />
+        {quality !== "low" && <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />}
+        {quality === "high" && <pointLight position={[0, 3, 0]} intensity={0.3} color="#fff5e6" />}
 
-        {/* Environment - simpler preset on Quest */}
-        <Environment preset={isQuest ? "apartment" : "studio"} />
+        {/* Environment - simpler preset on Quest or low quality */}
+        <Environment preset={quality === "low" ? "apartment" : "studio"} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <mesh position={[0, 1.2, -0.25]}>
-            <boxGeometry args={[0.5, 0.5, 0.5]} />
-            <meshStandardMaterial
-              color="#FFD700"
-              metalness={0.9}
-              roughness={0.1}
-              emissive="#FFD700"
-              emissiveIntensity={0.3}
-            />
-          </mesh>
+          {/* Gold test box for Phase 1 verification */}
+          <GoldTestBox />
 
           {/* Ring models with quality setting */}
           {RING_CATALOG.map((ring, index) => (
@@ -133,14 +186,14 @@ export function RingRoomScene() {
               ring={ring}
               position={ringPositions[index]}
               isSelected={selectedRingId === ring.id}
-              onSelect={() => setSelectedRingId(selectedRingId === ring.id ? null : ring.id)}
+              onSelect={() => handleRingSelect(ring.id)}
               onDragToShortlist={() => handleDragToShortlist(ring)}
               quality={quality}
             />
           ))}
 
           {/* Display surface */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow={!isQuest}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow={quality === "high"}>
             <planeGeometry args={[10, 10]} />
             <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.4} />
           </mesh>
@@ -148,8 +201,8 @@ export function RingRoomScene() {
           {/* Drop zone indicator */}
           <DropZoneIndicator isActive={isDraggingAny} />
 
-          {/* Contact shadows - disabled on Quest */}
-          {!isQuest && <ContactShadows position={[0, -0.14, 0]} opacity={0.5} scale={10} blur={2} far={4} />}
+          {/* Contact shadows - disabled on Quest or low quality */}
+          {quality === "high" && <ContactShadows position={[0, -0.14, 0]} opacity={0.5} scale={10} blur={2} far={4} />}
         </Suspense>
 
         {/* Camera controls */}
@@ -161,7 +214,7 @@ export function RingRoomScene() {
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 2.2}
           target={[0, 0, 0]}
-          enableDamping={!isQuest}
+          enableDamping={quality !== "low"}
         />
       </Canvas>
 
@@ -171,13 +224,10 @@ export function RingRoomScene() {
           ring={selectedRing}
           onClose={() => setSelectedRingId(null)}
           onAddToShortlist={() => {
-            if (isInShortlist(selectedRing.id)) {
-              shortlistManager.remove(selectedRing.id)
-            } else {
-              shortlistManager.add(selectedRing)
-            }
+            shortlistManager.toggle(selectedRing.id, selectedRing, "button")
           }}
           isInShortlist={isInShortlist(selectedRing.id)}
+          onNavigate={handleNavigate}
         />
       )}
 
@@ -185,6 +235,7 @@ export function RingRoomScene() {
         items={shortlistItems}
         onRemove={(ringId) => shortlistManager.remove(ringId)}
         onSelectRing={(ringId) => setSelectedRingId(ringId)}
+        onClear={() => shortlistManager.clear()}
       />
 
       {/* Header with XR button */}
@@ -192,6 +243,11 @@ export function RingRoomScene() {
         <h1 className="text-2xl font-bold text-white">Ring Room</h1>
         <p className="text-sm text-white/70">Tap a ring to view details | Drag down to shortlist</p>
         {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized Performance</p>}
+        {qualityLevel !== "high" && !isQuest && (
+          <p className="text-xs text-yellow-400 mt-1">
+            Performance Mode: {qualityLevel === "medium" ? "Reduced" : "Low"} Quality
+          </p>
+        )}
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
@@ -202,7 +258,7 @@ export function RingRoomScene() {
         >
           {showPerf ? "Hide" : "Show"} FPS
         </button>
-        {showPerf && <PerformanceMonitor enabled showDetails />}
+        {showPerf && <PerformanceMonitor enabled showDetails onPerformanceDegraded={handlePerformanceDegraded} />}
       </div>
 
       {/* Added to shortlist feedback */}
@@ -217,7 +273,7 @@ export function RingRoomScene() {
       {/* Instructions overlay */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
         <div className="bg-black/50 text-white/80 px-4 py-2 rounded-full text-sm">
-          Orbit: drag background | Zoom: pinch or scroll
+          Orbit: drag background | Zoom: pinch or scroll | Keyboard: Esc to close, arrows to navigate
         </div>
       </div>
     </div>

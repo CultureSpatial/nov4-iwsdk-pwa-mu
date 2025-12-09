@@ -8,6 +8,7 @@ interface FrameRateStats {
   minFps: number
   maxFps: number
   frameTime: number
+  jankCount: number // Track frame drops
 }
 
 export function useFrameRate(enabled = true): FrameRateStats {
@@ -17,11 +18,13 @@ export function useFrameRate(enabled = true): FrameRateStats {
     minFps: 60,
     maxFps: 60,
     frameTime: 16.67,
+    jankCount: 0,
   })
 
   const frameTimesRef = useRef<number[]>([])
   const lastTimeRef = useRef<number>(performance.now())
   const frameCountRef = useRef<number>(0)
+  const jankCountRef = useRef<number>(0)
   const rafIdRef = useRef<number>(0)
 
   const measureFrame = useCallback(() => {
@@ -30,6 +33,10 @@ export function useFrameRate(enabled = true): FrameRateStats {
     const now = performance.now()
     const delta = now - lastTimeRef.current
     lastTimeRef.current = now
+
+    if (delta > 50) {
+      jankCountRef.current++
+    }
 
     frameTimesRef.current.push(delta)
 
@@ -40,7 +47,7 @@ export function useFrameRate(enabled = true): FrameRateStats {
 
     frameCountRef.current++
 
-    // Update stats every 30 frames
+    // Update stats every 30 frames for performance
     if (frameCountRef.current % 30 === 0) {
       const times = frameTimesRef.current
       const avgFrameTime = times.reduce((a, b) => a + b, 0) / times.length
@@ -53,6 +60,7 @@ export function useFrameRate(enabled = true): FrameRateStats {
         minFps: Math.round(1000 / maxFrameTime),
         maxFps: Math.round(1000 / minFrameTime),
         frameTime: avgFrameTime,
+        jankCount: jankCountRef.current,
       })
     }
 
