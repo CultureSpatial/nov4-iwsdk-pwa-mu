@@ -7,7 +7,20 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { iwsdkManager, type IWSDKStatus, type SpatialAnchor } from "@/lib/iwsdk-integration"
-import { CheckCircle2, XCircle, AlertCircle, Box, Anchor, Eye, Hand, Grid3x3, AlertTriangle } from "lucide-react"
+import {
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Box,
+  Anchor,
+  Eye,
+  Hand,
+  Grid3x3,
+  AlertTriangle,
+  Home,
+  Camera,
+  StopCircle,
+} from "lucide-react"
 import Link from "next/link"
 
 export default function IWSDKTestPage() {
@@ -16,83 +29,174 @@ export default function IWSDKTestPage() {
   const [anchors, setAnchors] = useState<SpatialAnchor[]>([])
   const [passthroughSupported, setPassthroughSupported] = useState(false)
   const [testResults, setTestResults] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [passthroughActive, setPassthroughActive] = useState(false)
+  const [passthroughLoading, setPassthroughLoading] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+
     async function initializeTests() {
+      if (!mounted) return
+
       setLoading(true)
       setTestResults([])
+      setError(null)
 
-      // Test 1: Initialize IWSDK
-      addTestResult("Initializing IWSDK...")
-      const initialized = await iwsdkManager.initialize()
-      addTestResult(initialized ? "✓ IWSDK initialized" : "✗ IWSDK initialization failed")
+      try {
+        // Test 1: Initialize IWSDK
+        addTestResult("Initializing IWSDK...")
+        const initialized = await iwsdkManager.initialize()
+        if (!mounted) return
+        addTestResult(initialized ? "IWSDK initialized" : "IWSDK initialization failed (continuing anyway)")
 
-      // Test 2: Get status
-      addTestResult("Fetching IWSDK status...")
-      const iwsdkStatus = await iwsdkManager.getStatus()
-      setStatus(iwsdkStatus)
-      addTestResult(`✓ Status retrieved: ${iwsdkStatus.isAvailable ? "Available" : "Not Available"}`)
+        // Test 2: Get status
+        addTestResult("Fetching IWSDK status...")
+        const iwsdkStatus = await iwsdkManager.getStatus()
+        if (!mounted) return
+        setStatus(iwsdkStatus)
+        addTestResult(`Status: ${iwsdkStatus.isAvailable ? "Available" : "Not Available"}`)
+        addTestResult(`Detected Device: ${iwsdkStatus.detectedDevice}`)
+        addTestResult(`Debug Info: ${iwsdkStatus.deviceInfo}`)
 
-      if (iwsdkStatus.fallbackMode) {
-        addTestResult("⚠ Running in fallback mode (standard WebXR)")
-      }
-
-      // Test 3: Check passthrough
-      addTestResult("Checking passthrough mode...")
-      const passthrough = await iwsdkManager.requestPassthroughMode()
-      setPassthroughSupported(passthrough)
-      addTestResult(passthrough ? "✓ Passthrough supported" : "⚠ Passthrough not available in this environment")
-
-      // Test 4: Check WebXR capabilities
-      addTestResult("Checking WebXR capabilities...")
-      if (navigator.xr) {
-        try {
-          const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
-          const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
-          addTestResult(`✓ WebXR VR: ${vrSupported ? "Yes" : "No"}, AR: ${arSupported ? "Yes" : "No"}`)
-        } catch (error) {
-          if (error instanceof Error && error.message.includes("permissions policy")) {
-            addTestResult("⚠ WebXR blocked by permissions policy (preview environment)")
-          } else {
-            addTestResult(`✗ WebXR check failed: ${error instanceof Error ? error.message : "Unknown error"}`)
-          }
+        if (iwsdkStatus.fallbackMode) {
+          addTestResult("Running in fallback mode (standard WebXR)")
         }
-      } else {
-        addTestResult("✗ WebXR not available")
-      }
 
-      setLoading(false)
+        // Test 3: Check passthrough
+        addTestResult("Checking passthrough mode...")
+        try {
+          const passthrough = await iwsdkManager.requestPassthroughMode()
+          if (!mounted) return
+          setPassthroughSupported(passthrough)
+          addTestResult(passthrough ? "Passthrough supported" : "Passthrough not available")
+        } catch (e) {
+          addTestResult(`Passthrough check error: ${e instanceof Error ? e.message : "Unknown"}`)
+          setPassthroughSupported(false)
+        }
+
+        // Test 4: Check WebXR capabilities
+        addTestResult("Checking WebXR capabilities...")
+        if (typeof navigator !== "undefined" && navigator.xr) {
+          try {
+            const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
+            const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
+            if (!mounted) return
+            addTestResult(`WebXR VR: ${vrSupported ? "Yes" : "No"}, AR: ${arSupported ? "Yes" : "No"}`)
+          } catch (xrError) {
+            const msg = xrError instanceof Error ? xrError.message : "Unknown error"
+            if (msg.includes("permissions policy")) {
+              addTestResult("WebXR blocked by permissions policy (preview environment)")
+            } else {
+              addTestResult(`WebXR check error: ${msg}`)
+            }
+          }
+        } else {
+          addTestResult("WebXR API not available in this browser")
+        }
+
+        // Test 5: Device-specific info
+        addTestResult(`Running on Meta Quest: ${iwsdkManager.isOnMetaQuest() ? "Yes" : "No"}`)
+        addTestResult(`Device Type: ${iwsdkManager.getDeviceType()}`)
+        addTestResult("Tests complete")
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error"
+        console.error("[v0] IWSDK Test Error:", err)
+        if (mounted) {
+          setError(errorMsg)
+          addTestResult(`ERROR: ${errorMsg}`)
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
+      }
     }
 
     initializeTests()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   function addTestResult(message: string) {
-    setTestResults((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`])
+    const timestamp = new Date().toLocaleTimeString()
+    setTestResults((prev) => [...prev, `[${timestamp}] ${message}`])
   }
 
   async function createTestAnchor() {
-    const anchor = await iwsdkManager.createSpatialAnchor([0, 1.5, -1.2])
-    setAnchors(iwsdkManager.getAllSpatialAnchors())
-    addTestResult(`✓ Created spatial anchor: ${anchor.id}`)
+    try {
+      addTestResult("Creating test anchor...")
+      const anchor = await iwsdkManager.createSpatialAnchor([0, 1.5, -1.2])
+      setAnchors(iwsdkManager.getAllSpatialAnchors())
+      addTestResult(`Created spatial anchor: ${anchor.id}`)
+    } catch (e) {
+      addTestResult(`Anchor creation error: ${e instanceof Error ? e.message : "Unknown"}`)
+    }
   }
 
   async function clearAnchors() {
-    const allAnchors = iwsdkManager.getAllSpatialAnchors()
-    allAnchors.forEach((anchor) => iwsdkManager.deleteSpatialAnchor(anchor.id))
-    setAnchors([])
-    addTestResult("✓ Cleared all spatial anchors")
+    try {
+      const allAnchors = iwsdkManager.getAllSpatialAnchors()
+      allAnchors.forEach((anchor) => iwsdkManager.deleteSpatialAnchor(anchor.id))
+      setAnchors([])
+      addTestResult("Cleared all spatial anchors")
+    } catch (e) {
+      addTestResult(`Clear anchors error: ${e instanceof Error ? e.message : "Unknown"}`)
+    }
   }
 
   async function testRoomScanning() {
-    addTestResult("Starting room scanning test...")
-    const started = await iwsdkManager.startRoomScanning()
-    addTestResult(started ? "✓ Room scanning started" : "✗ Room scanning failed")
+    try {
+      addTestResult("Starting room scanning test...")
+      const started = await iwsdkManager.startRoomScanning()
+      addTestResult(started ? "Room scanning started" : "Room scanning failed to start")
 
-    setTimeout(async () => {
-      await iwsdkManager.stopRoomScanning()
-      addTestResult("✓ Room scanning stopped")
-    }, 3000)
+      setTimeout(async () => {
+        try {
+          await iwsdkManager.stopRoomScanning()
+          addTestResult("Room scanning stopped")
+        } catch (e) {
+          addTestResult(`Stop scanning error: ${e instanceof Error ? e.message : "Unknown"}`)
+        }
+      }, 3000)
+    } catch (e) {
+      addTestResult(`Room scanning error: ${e instanceof Error ? e.message : "Unknown"}`)
+    }
+  }
+
+  async function testPassthroughCamera() {
+    setPassthroughLoading(true)
+    try {
+      if (passthroughActive) {
+        // Stop passthrough
+        addTestResult("Stopping passthrough camera...")
+        const stopped = await iwsdkManager.stopPassthroughCamera()
+        setPassthroughActive(false)
+        addTestResult(stopped ? "Passthrough camera stopped" : "Failed to stop passthrough")
+      } else {
+        // Start passthrough
+        addTestResult("Initiating passthrough camera...")
+        const result = await iwsdkManager.startPassthroughCamera()
+        setPassthroughActive(result.success)
+
+        if (result.success) {
+          addTestResult("Passthrough camera STARTED successfully!")
+          if (result.error) {
+            addTestResult(`Note: ${result.error}`)
+          }
+        } else {
+          addTestResult(`Passthrough camera FAILED: ${result.error || "Unknown error"}`)
+        }
+      }
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : String(e)
+      addTestResult(`Passthrough error: ${errorMsg}`)
+      setPassthroughActive(false)
+    } finally {
+      setPassthroughLoading(false)
+    }
   }
 
   const CapabilityBadge = ({ enabled, label }: { enabled: boolean; label: string }) => (
@@ -107,6 +211,14 @@ export default function IWSDKTestPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
+          <div className="flex justify-center gap-2 mb-4">
+            <Link href="/">
+              <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                <Home className="h-4 w-4" />
+                Home
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-4xl font-bold text-white">IWSDK Test Suite</h1>
           <p className="text-slate-400">Meta Immersive Web SDK Integration Verification</p>
           <Link href="/ring-room">
@@ -115,6 +227,15 @@ export default function IWSDKTestPage() {
             </Button>
           </Link>
         </div>
+
+        {error && (
+          <Alert className="border-red-500 bg-red-500/10">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-red-200">
+              <strong>Error:</strong> {error}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {status?.fallbackMode && (
           <Alert className="border-yellow-500 bg-yellow-500/10">
@@ -168,8 +289,22 @@ export default function IWSDKTestPage() {
                 <Separator />
 
                 <div>
+                  <p className="text-sm text-muted-foreground mb-2">Detected Device</p>
+                  <Badge variant="outline" className="text-sm">
+                    {status.detectedDevice}
+                  </Badge>
+                </div>
+
+                <div>
                   <p className="text-sm text-muted-foreground mb-2">Device Info</p>
                   <p className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{status.deviceInfo}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">User Agent</p>
+                  <p className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">
+                    {status.userAgent}
+                  </p>
                 </div>
 
                 <Separator />
@@ -258,6 +393,67 @@ export default function IWSDKTestPage() {
           </CardContent>
         </Card>
 
+        {/* Passthrough Camera Test */}
+        <Card className="border-purple-500/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-purple-500" />
+              Passthrough Camera Test
+            </CardTitle>
+            <CardDescription>Test initiating the Quest passthrough camera in AR/MR mode</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert
+              className={passthroughActive ? "border-green-500 bg-green-500/10" : "border-slate-500 bg-slate-500/10"}
+            >
+              <AlertCircle className={`h-4 w-4 ${passthroughActive ? "text-green-500" : "text-slate-400"}`} />
+              <AlertDescription className={passthroughActive ? "text-green-200" : "text-slate-300"}>
+                {passthroughActive
+                  ? "Passthrough camera is ACTIVE. You should see your real environment through the headset."
+                  : "Passthrough camera is inactive. Click the button below to start it."}
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={testPassthroughCamera}
+                disabled={passthroughLoading}
+                variant={passthroughActive ? "destructive" : "default"}
+                className="gap-2 flex-1"
+              >
+                {passthroughLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                    {passthroughActive ? "Stopping..." : "Starting..."}
+                  </>
+                ) : passthroughActive ? (
+                  <>
+                    <StopCircle className="h-4 w-4" />
+                    Stop Passthrough Camera
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-4 w-4" />
+                    Start Passthrough Camera
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>
+                <strong>Requirements:</strong>
+              </p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>Meta Quest device with passthrough capability</li>
+                <li>Quest Browser or compatible WebXR browser</li>
+                <li>Page must be served over HTTPS (or localhost)</li>
+                <li>User must grant XR permissions when prompted</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Gold Test Box Check */}
         <Card>
           <CardHeader>
@@ -292,9 +488,11 @@ export default function IWSDKTestPage() {
           </CardHeader>
           <CardContent>
             <div className="bg-slate-950 text-green-400 font-mono text-xs p-4 rounded max-h-64 overflow-y-auto space-y-1">
-              {testResults.map((result, i) => (
-                <div key={i}>{result}</div>
-              ))}
+              {testResults.length === 0 ? (
+                <div className="text-slate-500">Waiting for tests to run...</div>
+              ) : (
+                testResults.map((result, i) => <div key={i}>{result}</div>)
+              )}
             </div>
           </CardContent>
         </Card>
