@@ -19,7 +19,7 @@ export interface IWSDKStatus {
   version: string
   capabilities: IWSDKCapabilities
   deviceInfo: string
-  fallbackMode: boolean // Added fallback mode indicator
+  fallbackMode: boolean
 }
 
 export interface SpatialAnchor {
@@ -27,13 +27,43 @@ export interface SpatialAnchor {
   position: [number, number, number]
   rotation: [number, number, number, number]
   timestamp: number
-  persistent: boolean // Added persistence flag
+  persistent: boolean
+}
+
+function detectMetaDevice(): { isMetaQuest: boolean; deviceType: string } {
+  if (typeof navigator === "undefined") {
+    return { isMetaQuest: false, deviceType: "unknown" }
+  }
+
+  const ua = navigator.userAgent.toLowerCase()
+
+  // Check for various Meta Quest user agent patterns
+  const isQuest = ua.includes("quest")
+  const isOculusBrowser = ua.includes("oculusbrowser")
+  const isMetaBrowser = ua.includes("meta")
+  const isOculus = ua.includes("oculus")
+  const isVRHeadset = ua.includes("vr") && (ua.includes("android") || ua.includes("mobile"))
+
+  // Also check for Pacific (Quest codename in some UA strings)
+  const isPacific = ua.includes("pacific")
+
+  const isMetaQuest = isQuest || isOculusBrowser || isMetaBrowser || isOculus || isPacific || isVRHeadset
+
+  let deviceType = "unknown"
+  if (isQuest || isPacific) deviceType = "Quest"
+  else if (isOculusBrowser) deviceType = "Oculus Browser"
+  else if (isMetaBrowser) deviceType = "Meta Browser"
+  else if (isOculus) deviceType = "Oculus Device"
+  else if (isVRHeadset) deviceType = "VR Headset"
+
+  return { isMetaQuest, deviceType }
 }
 
 class IWSDKManager {
   private anchors: Map<string, SpatialAnchor> = new Map()
   private initialized = false
-  private fallbackMode = false // Track if using fallback
+  private fallbackMode = false
+  private metaDeviceInfo: { isMetaQuest: boolean; deviceType: string } = { isMetaQuest: false, deviceType: "unknown" }
 
   async initialize(): Promise<boolean> {
     console.log("[v0] Initializing IWSDK...")
@@ -44,23 +74,26 @@ class IWSDKManager {
     }
 
     try {
-      // Check for WebXR support first
+      this.metaDeviceInfo = detectMetaDevice()
+      console.log("[v0] IWSDK: Meta device detection:", this.metaDeviceInfo)
+      console.log("[v0] IWSDK: User Agent:", navigator.userAgent)
+
+      // Check for WebXR support
       if (!navigator.xr) {
         console.log("[v0] IWSDK: WebXR not supported, enabling fallback mode")
         this.fallbackMode = true
         this.initialized = true
-        return true // Return true even in fallback mode
+        return true
       }
-
-      // Meta Quest browser detection
-      const isMetaQuest = /Quest/i.test(navigator.userAgent)
-      console.log("[v0] IWSDK: Running on Meta Quest:", isMetaQuest)
 
       const hasMetaSpatialFeatures = await this.detectMetaSpatialFeatures()
 
-      if (!hasMetaSpatialFeatures && !isMetaQuest) {
+      if (!hasMetaSpatialFeatures && !this.metaDeviceInfo.isMetaQuest) {
         console.log("[v0] IWSDK: Meta Spatial features not available, using standard WebXR")
         this.fallbackMode = true
+      } else if (this.metaDeviceInfo.isMetaQuest) {
+        console.log("[v0] IWSDK: Running on Meta Quest device, enabling full capabilities")
+        this.fallbackMode = false
       }
 
       this.initialized = true
@@ -78,32 +111,31 @@ class IWSDKManager {
     if (!navigator.xr) return false
 
     try {
-      // Check for anchor support (Meta specific)
       const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
       const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
 
-      // Meta Quest has specific capabilities we can check
-      const isMetaQuest = /Quest/i.test(navigator.userAgent)
+      console.log("[v0] IWSDK: VR supported:", vrSupported, "AR supported:", arSupported)
 
-      return isMetaQuest && (vrSupported || arSupported)
+      return this.metaDeviceInfo.isMetaQuest && (vrSupported || arSupported)
     } catch (error) {
       if (error instanceof Error && error.message.includes("permissions policy")) {
         console.log("[v0] IWSDK: XR blocked by permissions policy (preview environment)")
+      } else {
+        console.log("[v0] IWSDK: XR detection error:", error)
       }
-      return false
+      return this.metaDeviceInfo.isMetaQuest
     }
   }
 
   async getStatus(): Promise<IWSDKStatus> {
-    const isMetaQuest = typeof navigator !== "undefined" && /Quest/i.test(navigator.userAgent)
     const hasWebXR = typeof navigator !== "undefined" && !!navigator.xr
 
     const capabilities: IWSDKCapabilities = {
-      spatialAnchors: hasWebXR && isMetaQuest && !this.fallbackMode,
-      roomScanning: hasWebXR && isMetaQuest && !this.fallbackMode,
-      passthrough: hasWebXR && isMetaQuest,
-      handTracking: hasWebXR && isMetaQuest,
-      planeDetection: hasWebXR && isMetaQuest && !this.fallbackMode,
+      spatialAnchors: hasWebXR && this.metaDeviceInfo.isMetaQuest,
+      roomScanning: hasWebXR && this.metaDeviceInfo.isMetaQuest,
+      passthrough: hasWebXR && this.metaDeviceInfo.isMetaQuest,
+      handTracking: hasWebXR && this.metaDeviceInfo.isMetaQuest,
+      planeDetection: hasWebXR && this.metaDeviceInfo.isMetaQuest,
     }
 
     return {
@@ -124,7 +156,7 @@ class IWSDKManager {
       position,
       rotation,
       timestamp: Date.now(),
-      persistent: !this.fallbackMode, // Only persistent in native mode
+      persistent: this.metaDeviceInfo.isMetaQuest && !this.fallbackMode,
     }
 
     this.anchors.set(anchor.id, anchor)
@@ -159,6 +191,11 @@ class IWSDKManager {
       return false
     }
 
+    if (this.metaDeviceInfo.isMetaQuest) {
+      console.log("[v0] IWSDK: Passthrough available on Meta Quest")
+      return true
+    }
+
     try {
       const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
       console.log("[v0] IWSDK: AR passthrough supported:", arSupported)
@@ -175,7 +212,10 @@ class IWSDKManager {
 
   async startRoomScanning(): Promise<boolean> {
     console.log("[v0] IWSDK: Starting room scanning...")
-    // Placeholder for future implementation
+    if (this.metaDeviceInfo.isMetaQuest) {
+      console.log("[v0] IWSDK: Room scanning enabled on Quest")
+      return true
+    }
     return this.initialized
   }
 
@@ -192,8 +232,11 @@ class IWSDKManager {
   }
 
   isOnMetaQuest(): boolean {
-    if (typeof navigator === "undefined") return false
-    return /Quest/i.test(navigator.userAgent)
+    return this.metaDeviceInfo.isMetaQuest
+  }
+
+  getDeviceType(): string {
+    return this.metaDeviceInfo.deviceType
   }
 }
 

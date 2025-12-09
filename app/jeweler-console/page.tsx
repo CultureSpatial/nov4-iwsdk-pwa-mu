@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,7 @@ import {
   Gem,
   TrendingUp,
   MessageSquare,
+  ArrowLeft,
 } from "lucide-react"
 
 // Mock session data
@@ -181,6 +183,13 @@ export default function JewelerConsolePage() {
         <header className="border-b border-purple-900/30 bg-[#0f0f18]">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white hover:bg-purple-500/10">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Home
+                </Button>
+              </Link>
+              <div className="h-6 w-px bg-purple-900/30" />
               <div className="flex items-center gap-2">
                 <Gem className="h-6 w-6 text-purple-400" />
                 <span className="text-xl font-semibold text-white">Ring Room</span>

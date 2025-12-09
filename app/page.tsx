@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Gem, Sparkles, Settings } from "lucide-react"
+import { Gem, Sparkles, Settings, Monitor } from "lucide-react"
 
 export default function Page() {
   return (
@@ -30,6 +30,16 @@ export default function Page() {
               >
                 <Gem className="w-5 h-5 mr-2" />
                 Enter Ring Room
+              </Button>
+            </Link>
+            <Link href="/jeweler-console">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950 bg-transparent"
+              >
+                <Monitor className="w-5 h-5 mr-2" />
+                Jeweler Console
               </Button>
             </Link>
             <Link href="/test/iwsdk">
