@@ -16,6 +16,7 @@ import { RingDetailPanel } from "./ring-detail-panel"
 import { ShortlistTray } from "./shortlist-tray"
 import { PerformanceMonitor } from "./performance-monitor"
 import { XRButton } from "./xr-button"
+import { XRRingScene } from "./xr-ring-scene"
 import { RING_CATALOG } from "@/lib/ring-data"
 import { shortlistManager } from "@/lib/shortlist-manager"
 import { Analytics } from "@/lib/analytics"
@@ -184,6 +185,7 @@ export function RingRoomScene() {
   const [qualityLevel, setQualityLevel] = useState<"high" | "medium" | "low">("high")
   const [canvasReady, setCanvasReady] = useState(false)
   const [renderError, setRenderError] = useState<string | null>(null)
+  const [xrSession, setXrSession] = useState<XRSession | null>(null)
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
   const showPortraitWarning = usePortraitWarning()
@@ -258,12 +260,18 @@ export function RingRoomScene() {
   }, [])
 
   const handleEnterXR = useCallback((session: XRSession) => {
-    console.log("[v0] XR session requested but temporarily disabled")
+    console.log("[v0] XR session started, switching to XR view")
+    setXrSession(session)
   }, [])
 
   const handleExitXR = useCallback(() => {
     console.log("[v0] XR exit requested")
+    setXrSession(null)
   }, [])
+
+  if (xrSession) {
+    return <XRRingScene xrSession={xrSession} onSessionEnd={handleExitXR} />
+  }
 
   if (renderError) {
     return (
