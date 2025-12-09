@@ -41,14 +41,22 @@ export default function IWSDKTestPage() {
       addTestResult("Checking passthrough mode...")
       const passthrough = await iwsdkManager.requestPassthroughMode()
       setPassthroughSupported(passthrough)
-      addTestResult(passthrough ? "✓ Passthrough supported" : "✗ Passthrough not supported")
+      addTestResult(passthrough ? "✓ Passthrough supported" : "⚠ Passthrough not available in this environment")
 
       // Test 4: Check WebXR capabilities
       addTestResult("Checking WebXR capabilities...")
       if (navigator.xr) {
-        const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
-        const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
-        addTestResult(`✓ WebXR VR: ${vrSupported ? "Yes" : "No"}, AR: ${arSupported ? "Yes" : "No"}`)
+        try {
+          const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
+          const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
+          addTestResult(`✓ WebXR VR: ${vrSupported ? "Yes" : "No"}, AR: ${arSupported ? "Yes" : "No"}`)
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("permissions policy")) {
+            addTestResult("⚠ WebXR blocked by permissions policy (preview environment)")
+          } else {
+            addTestResult(`✗ WebXR check failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+          }
+        }
       } else {
         addTestResult("✗ WebXR not available")
       }

@@ -86,7 +86,10 @@ class IWSDKManager {
       const isMetaQuest = /Quest/i.test(navigator.userAgent)
 
       return isMetaQuest && (vrSupported || arSupported)
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("permissions policy")) {
+        console.log("[v0] IWSDK: XR blocked by permissions policy (preview environment)")
+      }
       return false
     }
   }
@@ -161,6 +164,10 @@ class IWSDKManager {
       console.log("[v0] IWSDK: AR passthrough supported:", arSupported)
       return arSupported
     } catch (error) {
+      if (error instanceof Error && error.message.includes("permissions policy")) {
+        console.log("[v0] IWSDK: Passthrough blocked by permissions policy (preview environment)")
+        return false
+      }
       console.error("[v0] IWSDK: Passthrough check failed:", error)
       return false
     }
