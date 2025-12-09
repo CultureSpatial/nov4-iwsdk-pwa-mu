@@ -6,8 +6,6 @@ import { OrbitControls, Environment, ContactShadows, PerspectiveCamera, Html, Ad
 import { RingModel } from "./ring-model"
 import { RingDetailPanel } from "./ring-detail-panel"
 import { ShortlistTray } from "./shortlist-tray"
-import { XRButton } from "./xr-button"
-import { XRRingScene } from "./xr-ring-scene"
 import { PerformanceMonitor } from "./performance-monitor"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
 import { useSyncExternalStore } from "react"
@@ -54,8 +52,6 @@ export function RingRoomScene() {
   const [selectedRingId, setSelectedRingId] = useState<string | null>(null)
   const [isDraggingAny, setIsDraggingAny] = useState(false)
   const [showAddedFeedback, setShowAddedFeedback] = useState<string | null>(null)
-  const [xrSession, setXrSession] = useState<XRSession | null>(null)
-  const [isInXR, setIsInXR] = useState(false)
   const [showPerf, setShowPerf] = useState(false)
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
@@ -80,18 +76,6 @@ export function RingRoomScene() {
     [isInShortlist],
   )
 
-  const handleEnterXR = useCallback((session: XRSession) => {
-    console.log("[v0] XR Session started successfully")
-    setXrSession(session)
-    setIsInXR(true)
-  }, [])
-
-  const handleExitXR = useCallback(() => {
-    console.log("[v0] XR Session ended")
-    setXrSession(null)
-    setIsInXR(false)
-  }, [])
-
   // Position rings in a semi-circle
   const ringPositions: [number, number, number][] = [
     [-1.2, 0, 0],
@@ -99,14 +83,10 @@ export function RingRoomScene() {
     [1.2, 0, 0],
   ]
 
-  if (isInXR) {
-    return <XRRingScene xrSession={xrSession} onSessionEnd={handleExitXR} />
-  }
-
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-      {/* Display desktop mode indicator when not in XR */}
-      {!isQuest && !isInXR && (
+      {/* Display desktop mode indicator */}
+      {!isQuest && (
         <div className="absolute top-20 left-4 z-10 bg-blue-500/20 text-blue-200 px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
           Desktop Mode: Use mouse to orbit and zoom
         </div>
@@ -200,12 +180,11 @@ export function RingRoomScene() {
       <div className="absolute top-4 left-4 z-10">
         <h1 className="text-2xl font-bold text-white">Ring Room</h1>
         <p className="text-sm text-white/70">Tap a ring to view details | Drag down to shortlist</p>
-        {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized + Auto-Start VR</p>}
+        {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized Performance</p>}
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
-        {/* Enable auto-start on Quest */}
-        <XRButton onEnterXR={handleEnterXR} onExitXR={handleExitXR} autoStartOnQuest={true} />
+        <div className="text-xs text-white/50 bg-black/30 px-3 py-2 rounded">XR Mode: Coming Soon</div>
         <button
           onClick={() => setShowPerf(!showPerf)}
           className="text-xs text-white/50 hover:text-white/80 transition-colors"
