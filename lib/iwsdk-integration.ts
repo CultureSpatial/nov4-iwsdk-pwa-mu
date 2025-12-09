@@ -190,6 +190,11 @@ class IWSDKManager {
   hasFullCapabilities(): boolean {
     return this.initialized && !this.fallbackMode
   }
+
+  isOnMetaQuest(): boolean {
+    if (typeof navigator === "undefined") return false
+    return /Quest/i.test(navigator.userAgent)
+  }
 }
 
 // Singleton instance

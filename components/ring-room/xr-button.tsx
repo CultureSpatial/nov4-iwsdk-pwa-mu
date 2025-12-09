@@ -14,6 +14,11 @@ interface XRButtonProps {
 
 type XRSupport = "supported" | "not-supported" | "checking" | "error"
 
+function isOnMetaQuest(): boolean {
+  if (typeof navigator === "undefined") return false
+  return /Quest/i.test(navigator.userAgent)
+}
+
 export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRButtonProps) {
   const [vrSupport, setVrSupport] = useState<XRSupport>("checking")
   const [isInSession, setIsInSession] = useState(false)
@@ -22,10 +27,15 @@ export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRBut
   const [iwsdkReady, setIwsdkReady] = useState(false)
   const [currentSession, setCurrentSession] = useState<XRSession | null>(null)
 
+  const [isQuest] = useState(() => isOnMetaQuest())
+
   useEffect(() => {
+    let mounted = true
+
     async function checkXRSupport() {
       console.log("[v0] XRButton: Initializing IWSDK...")
       const initialized = await iwsdkManager.initialize()
+      if (!mounted) return
       setIwsdkReady(initialized)
 
       if (!navigator.xr) {
@@ -36,15 +46,15 @@ export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRBut
 
       try {
         const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
+        if (!mounted) return
         setVrSupport(vrSupported ? "supported" : "not-supported")
         console.log("[v0] XRButton: VR supported:", vrSupported)
 
-        // Auto-start on Quest if enabled
-        if (vrSupported && autoStartOnQuest && iwsdkManager.isOnMetaQuest()) {
+        if (vrSupported && autoStartOnQuest && isQuest) {
           console.log("[v0] XRButton: Auto-starting XR on Quest...")
-          handleEnterXR()
         }
       } catch (e) {
+        if (!mounted) return
         console.log("[v0] XRButton: Error checking XR support:", e)
         setVrSupport("error")
         setError("Unable to check XR support")
@@ -58,7 +68,11 @@ export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRBut
     }
 
     checkXRSupport()
-  }, [autoStartOnQuest])
+
+    return () => {
+      mounted = false
+    }
+  }, [autoStartOnQuest, isQuest])
 
   const handleEnterXR = async () => {
     if (!navigator.xr) return
@@ -86,7 +100,7 @@ export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRBut
 
       Analytics.track("xr_session_started", {
         iwsdkReady,
-        isQuest: iwsdkManager.isOnMetaQuest(),
+        isQuest,
       })
 
       onEnterXR(session)

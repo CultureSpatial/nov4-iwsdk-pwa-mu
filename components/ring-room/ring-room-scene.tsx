@@ -36,9 +36,39 @@ function useQuestDetection() {
     const ua = navigator.userAgent.toLowerCase()
     const isQuestBrowser = ua.includes("quest") || ua.includes("oculus")
     setIsQuest(isQuestBrowser)
+    console.log("[v0] Quest detection:", isQuestBrowser, "UA:", ua.substring(0, 100))
   }, [])
 
   return isQuest
+}
+
+function usePortraitWarning() {
+  const [showWarning, setShowWarning] = useState(false)
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const ua = navigator.userAgent
+      const isQuest = /quest|oculus/i.test(ua)
+      if (isQuest) {
+        setShowWarning(false)
+        return
+      }
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(ua)
+      const isPortrait = window.innerHeight > window.innerWidth
+      setShowWarning(isMobile && isPortrait)
+    }
+
+    checkOrientation()
+    window.addEventListener("resize", checkOrientation)
+    window.addEventListener("orientationchange", checkOrientation)
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation)
+      window.removeEventListener("orientationchange", checkOrientation)
+    }
+  }, [])
+
+  return showWarning
 }
 
 function DropZoneIndicator({ isActive }: { isActive: boolean }) {
@@ -62,11 +92,16 @@ function LoadingFallback() {
 
 function GoldTestBox() {
   const meshRef = useRef<any>(null)
+  const [mounted, setMounted] = useState(false)
 
-  useFrame((state) => {
+  useEffect(() => {
+    setMounted(true)
+    console.log("[v0] GoldTestBox mounted - 3D rendering active")
+  }, [])
+
+  useFrame(() => {
     if (meshRef.current) {
-      // 0.5 RPM = 0.5/60 rotations per second = PI/60 radians per second
-      meshRef.current.rotation.y += (Math.PI / 60) * (1 / 60) * 2
+      meshRef.current.rotation.y += 0.01
     }
   })
 
@@ -85,7 +120,59 @@ function GoldTestBox() {
       <Text position={[0, 1.6, -0.25]} fontSize={0.08} color="#FFD700" anchorX="center">
         Phase 1: IWSDK Test
       </Text>
+      {mounted && (
+        <Text position={[0, 1.0, -0.25]} fontSize={0.05} color="#00FF00" anchorX="center">
+          Render OK
+        </Text>
+      )}
     </group>
+  )
+}
+
+function SceneContent({
+  quality,
+  selectedRingId,
+  handleRingSelect,
+  handleDragToShortlist,
+  isDraggingAny,
+}: {
+  quality: "high" | "medium" | "low"
+  selectedRingId: string | null
+  handleRingSelect: (id: string) => void
+  handleDragToShortlist: (ring: any) => void
+  isDraggingAny: boolean
+}) {
+  const ringPositions: [number, number, number][] = [
+    [-1.2, 0, 0],
+    [0, 0, -0.5],
+    [1.2, 0, 0],
+  ]
+
+  return (
+    <>
+      <GoldTestBox />
+
+      {RING_CATALOG.map((ring, index) => (
+        <RingModel
+          key={ring.id}
+          ring={ring}
+          position={ringPositions[index]}
+          isSelected={selectedRingId === ring.id}
+          onSelect={() => handleRingSelect(ring.id)}
+          onDragToShortlist={() => handleDragToShortlist(ring)}
+          quality={quality}
+        />
+      ))}
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow={quality === "high"}>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.4} />
+      </mesh>
+
+      <DropZoneIndicator isActive={isDraggingAny} />
+
+      {quality === "high" && <ContactShadows position={[0, -0.14, 0]} opacity={0.5} scale={10} blur={2} far={4} />}
+    </>
   )
 }
 
@@ -95,12 +182,39 @@ export function RingRoomScene() {
   const [showAddedFeedback, setShowAddedFeedback] = useState<string | null>(null)
   const [showPerf, setShowPerf] = useState(false)
   const [qualityLevel, setQualityLevel] = useState<"high" | "medium" | "low">("high")
+  const [canvasReady, setCanvasReady] = useState(false)
+  const [renderError, setRenderError] = useState<string | null>(null)
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
+  const showPortraitWarning = usePortraitWarning()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    console.log("[v0] RingRoomScene mounted")
+    console.log("[v0] isQuest:", isQuest)
+    console.log("[v0] showPortraitWarning:", showPortraitWarning)
+    console.log("[v0] qualityLevel:", qualityLevel)
+
+    try {
+      const canvas = document.createElement("canvas")
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl")
+      if (!gl) {
+        setRenderError("WebGL not supported")
+        console.log("[v0] WebGL not supported")
+      } else {
+        console.log("[v0] WebGL supported:", gl.getParameter(gl.VERSION))
+        setCanvasReady(true)
+      }
+    } catch (e) {
+      setRenderError("WebGL check failed: " + String(e))
+      console.log("[v0] WebGL check error:", e)
+    }
+  }, [isQuest, showPortraitWarning, qualityLevel])
 
   useEffect(() => {
     shortlistManager.hydrate(RING_CATALOG)
     Analytics.sessionStart("url")
+    console.log("[v0] Ring catalog loaded:", RING_CATALOG.length, "rings")
 
     return () => {
       Analytics.sessionEnd()
@@ -151,14 +265,49 @@ export function RingRoomScene() {
     console.log("[v0] XR exit requested")
   }, [])
 
-  const ringPositions: [number, number, number][] = [
-    [-1.2, 0, 0],
-    [0, 0, -0.5],
-    [1.2, 0, 0],
-  ]
+  if (renderError) {
+    return (
+      <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center p-8">
+          <h2 className="text-2xl font-bold text-white mb-4">3D Rendering Unavailable</h2>
+          <p className="text-white/70 mb-2">{renderError}</p>
+          <p className="text-white/50 text-sm">Please try a different browser or device</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800"
+      style={{ minHeight: "100vh", minWidth: "100vw" }}
+    >
+      {showPortraitWarning && (
+        <div className="absolute inset-0 z-50 bg-slate-900/95 flex flex-col items-center justify-center p-8 text-center">
+          <div className="mb-6">
+            <svg
+              className="w-20 h-20 text-purple-400 mx-auto animate-pulse"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Rotate Your Device</h2>
+          <p className="text-white/70 text-lg mb-2">
+            This experience is optimized for <span className="text-purple-400 font-semibold">landscape mode</span>
+          </p>
+          <p className="text-white/50 text-sm">Please rotate your phone horizontally for the best viewing experience</p>
+        </div>
+      )}
+
       {!isQuest && (
         <div className="absolute top-20 left-4 z-10 bg-blue-500/20 text-blue-200 px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
           Desktop Mode: Use mouse to orbit and zoom
@@ -166,12 +315,31 @@ export function RingRoomScene() {
       )}
 
       <Canvas
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          touchAction: "none",
+        }}
         gl={{
           antialias: quality !== "low",
           powerPreference: "high-performance",
           alpha: false,
+          preserveDrawingBuffer: true,
+          failIfMajorPerformanceCaveat: false,
         }}
         dpr={isQuest ? 1 : [1, 2]}
+        frameloop="always"
+        onCreated={({ gl }) => {
+          console.log("[v0] Canvas created, renderer:", gl.info.render)
+          setCanvasReady(true)
+        }}
+        onError={(e) => {
+          console.log("[v0] Canvas error:", e)
+          setRenderError("Canvas error: " + String(e))
+        }}
       >
         <AdaptiveDpr pixelated />
 
@@ -185,28 +353,13 @@ export function RingRoomScene() {
         <Environment preset={quality === "low" ? "apartment" : "studio"} />
 
         <Suspense fallback={<LoadingFallback />}>
-          <GoldTestBox />
-
-          {RING_CATALOG.map((ring, index) => (
-            <RingModel
-              key={ring.id}
-              ring={ring}
-              position={ringPositions[index]}
-              isSelected={selectedRingId === ring.id}
-              onSelect={() => handleRingSelect(ring.id)}
-              onDragToShortlist={() => handleDragToShortlist(ring)}
-              quality={quality}
-            />
-          ))}
-
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]} receiveShadow={quality === "high"}>
-            <planeGeometry args={[10, 10]} />
-            <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.4} />
-          </mesh>
-
-          <DropZoneIndicator isActive={isDraggingAny} />
-
-          {quality === "high" && <ContactShadows position={[0, -0.14, 0]} opacity={0.5} scale={10} blur={2} far={4} />}
+          <SceneContent
+            quality={quality}
+            selectedRingId={selectedRingId}
+            handleRingSelect={handleRingSelect}
+            handleDragToShortlist={handleDragToShortlist}
+            isDraggingAny={isDraggingAny}
+          />
         </Suspense>
 
         <OrbitControls
@@ -249,6 +402,7 @@ export function RingRoomScene() {
             Performance Mode: {qualityLevel === "medium" ? "Reduced" : "Low"} Quality
           </p>
         )}
+        <p className="text-xs text-blue-400 mt-1">Canvas: {canvasReady ? "Ready" : "Loading..."}</p>
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
