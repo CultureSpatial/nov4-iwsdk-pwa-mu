@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useMemo } from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
 import type { Mesh, Group } from "three"
@@ -13,9 +13,17 @@ interface RingModelProps {
   isSelected: boolean
   onSelect: () => void
   onDragToShortlist?: () => void
+  quality?: "high" | "medium" | "low"
 }
 
-export function RingModel({ ring, position, isSelected, onSelect, onDragToShortlist }: RingModelProps) {
+export function RingModel({
+  ring,
+  position,
+  isSelected,
+  onSelect,
+  onDragToShortlist,
+  quality = "high",
+}: RingModelProps) {
   const groupRef = useRef<Group>(null)
   const bandRef = useRef<Mesh>(null)
   const stoneRef = useRef<Mesh>(null)
@@ -28,6 +36,17 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
   const dragStartPos = useRef<THREE.Vector3 | null>(null)
   const currentDragPos = useRef<THREE.Vector3>(new THREE.Vector3())
 
+  const geoSegments = useMemo(() => {
+    switch (quality) {
+      case "low":
+        return { torus: [16, 32], octa: 0, cylinder: 4 }
+      case "medium":
+        return { torus: [24, 48], octa: 0, cylinder: 6 }
+      default:
+        return { torus: [32, 64], octa: 0, cylinder: 8 }
+    }
+  }, [quality])
+
   const handlePointerDown = useCallback(
     (e: THREE.Event) => {
       e.stopPropagation()
@@ -35,7 +54,6 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
         setIsDragging(true)
         dragStartPos.current = groupRef.current.position.clone()
         gl.domElement.style.cursor = "grabbing"
-        // Capture pointer for drag tracking
         ;(e as any).target?.setPointerCapture?.((e as any).pointerId)
       }
     },
@@ -45,18 +63,14 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
   const handlePointerUp = useCallback(
     (e: THREE.Event) => {
       if (isDragging && groupRef.current) {
-        // Check if dragged to bottom of screen (shortlist zone)
         const dragDistance = dragStartPos.current ? groupRef.current.position.distanceTo(dragStartPos.current) : 0
 
-        // If minimal movement, treat as click/tap
         if (dragDistance < 0.1) {
           onSelect()
         } else if (groupRef.current.position.y < -0.5 && onDragToShortlist) {
-          // Dragged down to shortlist zone
           onDragToShortlist()
         }
 
-        // Reset position with animation
         setDragOffset([0, 0, 0])
         setIsDragging(false)
         gl.domElement.style.cursor = hovered ? "pointer" : "auto"
@@ -69,12 +83,10 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
   const handlePointerMove = useCallback(
     (e: THREE.Event) => {
       if (isDragging && groupRef.current) {
-        // Get pointer position in normalized device coordinates
         const rect = gl.domElement.getBoundingClientRect()
         const x = (((e as any).clientX - rect.left) / rect.width) * 2 - 1
         const y = -(((e as any).clientY - rect.top) / rect.height) * 2 + 1
 
-        // Project to 3D space at ring's depth
         const vector = new THREE.Vector3(x, y, 0.5)
         vector.unproject(camera)
         const dir = vector.sub(camera.position).normalize()
@@ -88,45 +100,35 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
     [isDragging, camera, gl, position],
   )
 
-  // Animation frame
   useFrame((state) => {
     if (!groupRef.current) return
 
-    // Base position
     const baseX = position[0] + dragOffset[0]
     const baseY = position[1] + dragOffset[1]
-
-    // Hover lift effect (when not dragging)
     const targetY = baseY + (hovered && !isDragging ? 0.1 : 0)
+
+    // Smooth position interpolation
     groupRef.current.position.x = baseX
     groupRef.current.position.y += (targetY - groupRef.current.position.y) * 0.15
     groupRef.current.position.z = position[2]
 
-    // Rotation based on state
+    // Simplified rotation logic
     if (isSelected) {
-      // Selected: slow showcase rotation
       groupRef.current.rotation.y += 0.008
     } else if (isDragging) {
-      // Dragging: tilt based on movement
       groupRef.current.rotation.z = dragOffset[0] * 0.3
       groupRef.current.rotation.x = -dragOffset[1] * 0.2
     } else {
-      // Idle: gentle floating animation
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5 + position[0]) * 0.15
-      groupRef.current.rotation.z *= 0.9 // Smooth return to neutral
-      groupRef.current.rotation.x *= 0.9
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.4 + position[0]) * 0.12
+      groupRef.current.rotation.z *= 0.92
+      groupRef.current.rotation.x *= 0.92
     }
 
-    // Stone sparkle effect on hover
-    if (stoneRef.current) {
-      if (hovered || isSelected) {
-        stoneRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 4) * 0.08
-        stoneRef.current.rotation.x = Math.cos(state.clock.elapsedTime * 3) * 0.05
-      }
+    if (stoneRef.current && (hovered || isSelected)) {
+      stoneRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 3) * 0.06
     }
   })
 
-  // Visual feedback for drag-to-shortlist zone
   const isInDropZone = isDragging && dragOffset[1] < -0.3
 
   return (
@@ -145,58 +147,58 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
         if (!isDragging) gl.domElement.style.cursor = "auto"
       }}
     >
-      {/* Ring Band */}
+      {/* Ring Band - optimized geometry */}
       <mesh ref={bandRef} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.3, 0.05, 32, 64]} />
+        <torusGeometry args={[0.3, 0.05, geoSegments.torus[0], geoSegments.torus[1]]} />
         <meshStandardMaterial color={ring.colors.metal} metalness={0.9} roughness={0.1} envMapIntensity={1.5} />
       </mesh>
 
-      {/* Center Stone */}
+      {/* Center Stone - optimized material */}
       <mesh ref={stoneRef} position={[0, 0.15, 0]} scale={hovered || isSelected ? 1.1 : 1}>
-        <octahedronGeometry args={[0.12, 0]} />
+        <octahedronGeometry args={[0.12, geoSegments.octa]} />
         <meshPhysicalMaterial
           color={ring.colors.stone}
           metalness={0.1}
           roughness={0.05}
-          transmission={0.9}
-          thickness={0.5}
-          envMapIntensity={2}
-          clearcoat={1}
+          transmission={quality === "low" ? 0.7 : 0.9}
+          thickness={quality === "low" ? 0.3 : 0.5}
+          envMapIntensity={quality === "low" ? 1 : 2}
+          clearcoat={quality === "low" ? 0 : 1}
           clearcoatRoughness={0}
           ior={2.4}
         />
       </mesh>
 
-      {/* Prongs */}
-      {[0, 1, 2, 3].map((i) => (
+      {/* Prongs - reduced count on low quality */}
+      {(quality === "low" ? [0, 2] : [0, 1, 2, 3]).map((i) => (
         <mesh
           key={i}
           position={[Math.cos((i * Math.PI) / 2) * 0.08, 0.08, Math.sin((i * Math.PI) / 2) * 0.08]}
           rotation={[0.3, (i * Math.PI) / 2, 0]}
         >
-          <cylinderGeometry args={[0.01, 0.015, 0.1, 8]} />
+          <cylinderGeometry args={[0.01, 0.015, 0.1, geoSegments.cylinder]} />
           <meshStandardMaterial color={ring.colors.metal} metalness={0.9} roughness={0.1} />
         </mesh>
       ))}
 
-      {/* Selection ring indicator */}
+      {/* Selection indicator */}
       {isSelected && (
         <mesh position={[0, -0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.35, 0.4, 32]} />
+          <ringGeometry args={[0.35, 0.4, quality === "low" ? 16 : 32]} />
           <meshBasicMaterial color="#10B981" transparent opacity={0.6} />
         </mesh>
       )}
 
-      {/* Drop zone indicator when dragging */}
+      {/* Drop zone indicator */}
       {isInDropZone && (
         <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.4, 0.5, 32]} />
+          <ringGeometry args={[0.4, 0.5, quality === "low" ? 16 : 32]} />
           <meshBasicMaterial color="#10B981" transparent opacity={0.8} />
         </mesh>
       )}
 
-      {/* Hover tooltip */}
-      {hovered && !isSelected && !isDragging && (
+      {/* Hover tooltip - only show on non-low quality */}
+      {hovered && !isSelected && !isDragging && quality !== "low" && (
         <Html position={[0, 0.5, 0]} center>
           <div className="bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm whitespace-nowrap pointer-events-none">
             <div className="font-medium">{ring.name}</div>
@@ -213,7 +215,7 @@ export function RingModel({ ring, position, isSelected, onSelect, onDragToShortl
               isInDropZone ? "bg-emerald-500 text-white" : "bg-black/80 text-white"
             }`}
           >
-            {isInDropZone ? "Release to add to shortlist!" : "Drag down to shortlist"}
+            {isInDropZone ? "Release to add!" : "Drag down"}
           </div>
         </Html>
       )}
