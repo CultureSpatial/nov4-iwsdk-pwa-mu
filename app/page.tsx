@@ -1,143 +1,100 @@
-"use client"
-
-import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { trackPWAInstalled, trackExperienceStarted, SessionTracker, getDeviceInfo } from "@/lib/analytics"
+import { Gem, Sparkles, Settings } from "lucide-react"
 
-export default function LandingPage() {
-  const [sessionTracker] = useState(() => new SessionTracker())
-  const [deviceInfo, setDeviceInfo] = useState<{
-    platform: string
-    webxrSupported: boolean
-  } | null>(null)
-
-  useEffect(() => {
-    // Detect device capabilities
-    const info = getDeviceInfo()
-    setDeviceInfo({
-      platform: info.platform,
-      webxrSupported: info.webxrSupported,
-    })
-
-    // Track PWA installation
-    window.addEventListener("appinstalled", () => {
-      trackPWAInstalled()
-    })
-
-    // Cleanup session on unmount
-    return () => {
-      sessionTracker.endSession()
-    }
-  }, [sessionTracker])
-
-  const handleStartExperience = (type: "webxr" | "2d_fallback") => {
-    trackExperienceStarted(type)
-    sessionTracker.recordInteraction("start_experience", { type })
-    // Navigate to experience (to be implemented)
-  }
-
+export default function Page() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-950 via-emerald-900 to-black text-white">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-slate-950 dark:to-slate-900">
       <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-5xl font-bold text-balance">Cultural Hospitality AR Pilot</h1>
-            <p className="text-xl text-emerald-200 text-balance">
-              Experience the future of mise en scène with digital drops
-            </p>
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <Badge className="mb-4 bg-purple-600">
+            <Sparkles className="w-3 h-3 mr-1" />
+            AR Ring Consultation Experience
+          </Badge>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Ring Room Demo
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            Interactive 3D engagement ring consultation with WebXR support. View, compare, and shortlist rings in an
+            immersive experience.
+          </p>
+
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link href="/ring-room">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Gem className="w-5 h-5 mr-2" />
+                Enter Ring Room
+              </Button>
+            </Link>
+            <Link href="/test/iwsdk">
+              <Button size="lg" variant="outline">
+                <Settings className="w-5 h-5 mr-2" />
+                IWSDK Test Suite
+              </Button>
+            </Link>
           </div>
+        </div>
 
-          {/* Device Info Card */}
-          {deviceInfo && (
-            <Card className="bg-emerald-900/50 border-emerald-700">
+        {/* Features */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center">Features</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="border-purple-200 dark:border-purple-800">
               <CardHeader>
-                <CardTitle className="text-white">Device Status</CardTitle>
-                <CardDescription className="text-emerald-200">Your device capabilities</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-100">Platform:</span>
-                  <Badge variant="secondary">{deviceInfo.platform}</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-100">WebXR Support:</span>
-                  <Badge variant={deviceInfo.webxrSupported ? "default" : "destructive"}>
-                    {deviceInfo.webxrSupported ? "Supported" : "Not Supported"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Experience Options */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors">
-              <CardHeader>
-                <CardTitle className="text-white">WebXR Experience</CardTitle>
-                <CardDescription className="text-emerald-200">Immersive AR with full spatial tracking</CardDescription>
+                <CardTitle>3D Ring Visualization</CardTitle>
+                <CardDescription>Interactive 3D models</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleStartExperience("webxr")}
-                  disabled={!deviceInfo?.webxrSupported}
-                >
-                  {deviceInfo?.webxrSupported ? "Start AR Experience" : "WebXR Not Available"}
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  View detailed engagement rings from every angle with realistic materials and lighting.
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-emerald-900/50 border-emerald-700 hover:bg-emerald-900/70 transition-colors">
+            <Card className="border-purple-200 dark:border-purple-800">
               <CardHeader>
-                <CardTitle className="text-white">2D Experience</CardTitle>
-                <CardDescription className="text-emerald-200">Interactive mobile experience</CardDescription>
+                <CardTitle>WebXR Support</CardTitle>
+                <CardDescription>Immersive experience</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleStartExperience("2d_fallback")}
-                >
-                  Start 2D Experience
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Features */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className="bg-emerald-900/30 border-emerald-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Photo Booth</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-emerald-200 text-sm">Capture moments with AR filters</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter VR/AR mode on supported devices for a fully immersive ring consultation experience.
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="bg-emerald-900/30 border-emerald-700">
+            <Card className="border-purple-200 dark:border-purple-800">
               <CardHeader>
-                <CardTitle className="text-white text-lg">Cocktail Menu</CardTitle>
+                <CardTitle>Shortlist & Compare</CardTitle>
+                <CardDescription>Save your favorites</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-emerald-200 text-sm">Explore Wicked-themed drinks</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-emerald-900/30 border-emerald-700">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">Interactive Polls</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-emerald-200 text-sm">Engage with real-time voting</p>
+                <p className="text-sm text-muted-foreground">
+                  Build a shortlist of your favorite rings and share them with others via a unique link.
+                </p>
               </CardContent>
             </Card>
           </div>
+        </div>
 
-          {/* Session Info */}
-          <div className="text-center text-emerald-300 text-sm">Session ID: {sessionTracker.getSessionId()}</div>
+        {/* Quick Start */}
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4">Quick Start</h2>
+          <div className="max-w-xl mx-auto bg-slate-100 dark:bg-slate-800 rounded-lg p-6 text-left">
+            <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+              <li>Click "Enter Ring Room" to launch the demo</li>
+              <li>Browse available engagement rings in the carousel</li>
+              <li>Select a ring to view it in 3D detail</li>
+              <li>Add favorites to your shortlist</li>
+              <li>On supported devices, enter XR mode for immersive viewing</li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>

@@ -1,30 +1,102 @@
-# Digital drop in Seattle
+# Emerald Gem AR Platform
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A phygital AR experience for cultural hospitality, built with Next.js 16, React 19, and Three.js.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/kudzi-6744s-projects/v0-cultural-gaming-ar-pilot)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/gOgfR0Y2heW)
+## Features
 
-## Overview
+- **Ring Room**: Interactive 3D ring showcase with WebXR support
+- **Photo Booth**: AR photo capture with filters
+- **Cocktail Menu**: AR-enhanced drink menu
+- **IWSDK Integration**: Meta Spatial SDK for spatial anchors
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Quick Start
 
-## Deployment
+\`\`\`bash
+# Install dependencies
+npm install
 
-Your project is live at:
+# Run development server
+npm run dev
 
-**[https://vercel.com/kudzi-6744s-projects/v0-cultural-gaming-ar-pilot](https://vercel.com/kudzi-6744s-projects/v0-cultural-gaming-ar-pilot)**
+# Open http://localhost:3000
+\`\`\`
 
-## Build your app
+## Project Structure
 
-Continue building your app on:
+\`\`\`
+├── app/                  # Next.js App Router pages
+│   ├── ring-room/        # 3D ring showcase
+│   ├── ar/               # AR experiences
+│   └── test/             # Test pages
+├── components/           # React components
+│   ├── ring-room/        # Ring room components
+│   └── ui/               # shadcn/ui components
+├── lib/                  # Utilities
+│   ├── analytics.ts      # Vercel Analytics
+│   ├── iwsdk-integration.ts  # IWSDK wrapper
+│   └── shortlist-manager.ts  # Ring shortlist
+└── docs/                 # Documentation
+\`\`\`
 
-**[https://v0.app/chat/gOgfR0Y2heW](https://v0.app/chat/gOgfR0Y2heW)**
+## Environment Variables
 
-## How It Works
+Required variables (add in Vercel or `.env.local`):
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+<!-- Removed Amplitude, only Vercel Analytics (zero-config) -->
+\`\`\`bash
+# Event Configuration
+NEXT_PUBLIC_EVENT_NAME="Your Event Name"
+NEXT_PUBLIC_EVENT_DATE="2025-12-15"
+
+# Feature Flags
+NEXT_PUBLIC_ENABLE_PHOTO_BOOTH=true
+NEXT_PUBLIC_ENABLE_COCKTAIL_MENU=true
+\`\`\`
+
+## Analytics
+
+This project uses **Vercel Analytics** for tracking. It's zero-config and automatically enabled when deployed to Vercel.
+
+Events are tracked via `lib/analytics.ts`:
+
+\`\`\`typescript
+import { Analytics } from '@/lib/analytics'
+
+// Track ring interactions
+Analytics.ringViewed('web', 'ring-001', 'Emerald Solitaire')
+Analytics.ringShortlisted('web', 'ring-001', 'Emerald Solitaire')
+
+// Track XR events
+Analytics.xrModeEntered('web', 'vr')
+\`\`\`
+
+## Testing
+
+### Ring Room
+1. Navigate to `/ring-room`
+2. Verify gold test box is visible (Phase 1 verification)
+3. Click rings to view details
+4. Add rings to shortlist
+5. Test XR button (disabled due to library issues)
+
+### IWSDK Test
+1. Navigate to `/test/iwsdk`
+2. Check device capabilities
+3. Test spatial anchor creation
+
+## Known Issues
+
+- `@react-three/xr` has internal errors - XR features temporarily disabled
+- Hand tracking requires Quest device for testing
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **UI**: React 19, Tailwind CSS 4, shadcn/ui
+- **3D**: Three.js, React Three Fiber, React Three Drei
+- **Analytics**: Vercel Analytics
+- **Deployment**: Vercel
+
+## License
+
+MIT
