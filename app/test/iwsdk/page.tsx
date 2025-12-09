@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import { iwsdkManager, type IWSDKStatus, type SpatialAnchor } from "@/lib/iwsdk-integration"
-import { CheckCircle2, XCircle, AlertCircle, Box, Anchor, Eye, Hand, Grid3x3 } from "lucide-react"
+import { CheckCircle2, XCircle, AlertCircle, Box, Anchor, Eye, Hand, Grid3x3, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
 export default function IWSDKTestPage() {
@@ -32,6 +32,10 @@ export default function IWSDKTestPage() {
       const iwsdkStatus = await iwsdkManager.getStatus()
       setStatus(iwsdkStatus)
       addTestResult(`✓ Status retrieved: ${iwsdkStatus.isAvailable ? "Available" : "Not Available"}`)
+
+      if (iwsdkStatus.fallbackMode) {
+        addTestResult("⚠ Running in fallback mode (standard WebXR)")
+      }
 
       // Test 3: Check passthrough
       addTestResult("Checking passthrough mode...")
@@ -103,6 +107,16 @@ export default function IWSDKTestPage() {
             </Button>
           </Link>
         </div>
+
+        {status?.fallbackMode && (
+          <Alert className="border-yellow-500 bg-yellow-500/10">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-200">
+              <strong>Fallback Mode Active:</strong> Running with standard WebXR. For full IWSDK features, use a Meta
+              Quest device.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Status Overview */}
         <Card>

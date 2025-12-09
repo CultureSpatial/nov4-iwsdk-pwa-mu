@@ -1,7 +1,10 @@
 /**
  * Meta Immersive Web SDK (IWSDK) Integration
  * Provides spatial anchors, room scanning, and AR capabilities
+ * with graceful degradation to standard WebXR
  */
+
+import { Analytics } from "./analytics"
 
 export interface IWSDKCapabilities {
   spatialAnchors: boolean
@@ -16,6 +19,7 @@ export interface IWSDKStatus {
   version: string
   capabilities: IWSDKCapabilities
   deviceInfo: string
+  fallbackMode: boolean // Added fallback mode indicator
 }
 
 export interface SpatialAnchor {
@@ -23,16 +27,17 @@ export interface SpatialAnchor {
   position: [number, number, number]
   rotation: [number, number, number, number]
   timestamp: number
+  persistent: boolean // Added persistence flag
 }
 
 class IWSDKManager {
   private anchors: Map<string, SpatialAnchor> = new Map()
   private initialized = false
+  private fallbackMode = false // Track if using fallback
 
   async initialize(): Promise<boolean> {
     console.log("[v0] Initializing IWSDK...")
 
-    // Check if Meta Spatial SDK is available
     if (typeof window === "undefined") {
       console.log("[v0] IWSDK: Not in browser context")
       return false
@@ -41,19 +46,47 @@ class IWSDKManager {
     try {
       // Check for WebXR support first
       if (!navigator.xr) {
-        console.log("[v0] IWSDK: WebXR not supported")
-        return false
+        console.log("[v0] IWSDK: WebXR not supported, enabling fallback mode")
+        this.fallbackMode = true
+        this.initialized = true
+        return true // Return true even in fallback mode
       }
 
       // Meta Quest browser detection
       const isMetaQuest = /Quest/i.test(navigator.userAgent)
       console.log("[v0] IWSDK: Running on Meta Quest:", isMetaQuest)
 
+      const hasMetaSpatialFeatures = await this.detectMetaSpatialFeatures()
+
+      if (!hasMetaSpatialFeatures && !isMetaQuest) {
+        console.log("[v0] IWSDK: Meta Spatial features not available, using standard WebXR")
+        this.fallbackMode = true
+      }
+
       this.initialized = true
-      console.log("[v0] IWSDK initialized successfully")
+      console.log("[v0] IWSDK initialized successfully (fallback:", this.fallbackMode, ")")
       return true
     } catch (error) {
       console.error("[v0] IWSDK initialization failed:", error)
+      this.fallbackMode = true
+      this.initialized = true
+      return true
+    }
+  }
+
+  private async detectMetaSpatialFeatures(): Promise<boolean> {
+    if (!navigator.xr) return false
+
+    try {
+      // Check for anchor support (Meta specific)
+      const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
+      const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
+
+      // Meta Quest has specific capabilities we can check
+      const isMetaQuest = /Quest/i.test(navigator.userAgent)
+
+      return isMetaQuest && (vrSupported || arSupported)
+    } catch {
       return false
     }
   }
@@ -62,17 +95,20 @@ class IWSDKManager {
     const isMetaQuest = typeof navigator !== "undefined" && /Quest/i.test(navigator.userAgent)
     const hasWebXR = typeof navigator !== "undefined" && !!navigator.xr
 
+    const capabilities: IWSDKCapabilities = {
+      spatialAnchors: hasWebXR && isMetaQuest && !this.fallbackMode,
+      roomScanning: hasWebXR && isMetaQuest && !this.fallbackMode,
+      passthrough: hasWebXR && isMetaQuest,
+      handTracking: hasWebXR && isMetaQuest,
+      planeDetection: hasWebXR && isMetaQuest && !this.fallbackMode,
+    }
+
     return {
-      isAvailable: this.initialized && hasWebXR,
+      isAvailable: this.initialized,
       version: "1.0.0-beta",
-      capabilities: {
-        spatialAnchors: hasWebXR && isMetaQuest,
-        roomScanning: hasWebXR && isMetaQuest,
-        passthrough: hasWebXR && isMetaQuest,
-        handTracking: hasWebXR && isMetaQuest,
-        planeDetection: hasWebXR && isMetaQuest,
-      },
+      capabilities,
       deviceInfo: typeof navigator !== "undefined" ? navigator.userAgent : "Unknown",
+      fallbackMode: this.fallbackMode,
     }
   }
 
@@ -85,10 +121,14 @@ class IWSDKManager {
       position,
       rotation,
       timestamp: Date.now(),
+      persistent: !this.fallbackMode, // Only persistent in native mode
     }
 
     this.anchors.set(anchor.id, anchor)
-    console.log("[v0] IWSDK: Created spatial anchor:", anchor.id)
+    console.log("[v0] IWSDK: Created spatial anchor:", anchor.id, "(persistent:", anchor.persistent, ")")
+
+    Analytics.spatialAnchorCreated(anchor.id, position)
+
     return anchor
   }
 
@@ -134,6 +174,14 @@ class IWSDKManager {
 
   async stopRoomScanning(): Promise<void> {
     console.log("[v0] IWSDK: Stopping room scanning...")
+  }
+
+  isInFallbackMode(): boolean {
+    return this.fallbackMode
+  }
+
+  hasFullCapabilities(): boolean {
+    return this.initialized && !this.fallbackMode
   }
 }
 

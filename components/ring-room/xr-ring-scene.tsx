@@ -1,13 +1,14 @@
 "use client"
 
 import { useRef, useState, useCallback, useEffect } from "react"
-import { Canvas } from "@react-three/fiber"
+import { Canvas, useFrame } from "@react-three/fiber"
 import { XR, Controllers, Hands, useXR } from "@react-three/xr"
 import { Environment, Text } from "@react-three/drei"
 import { RingModel } from "./ring-model"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
 import { useSyncExternalStore } from "react"
 import { iwsdkManager } from "@/lib/iwsdk-integration"
+import { Analytics } from "@/lib/analytics"
 
 // Singleton shortlist manager
 const shortlistManager = createShortlistManager()
@@ -16,19 +17,53 @@ function useShortlist() {
   return useSyncExternalStore(shortlistManager.subscribe, shortlistManager.getItems, shortlistManager.getItems)
 }
 
+function RotatingGoldBox() {
+  const meshRef = useRef<any>(null)
+
+  useFrame(() => {
+    if (meshRef.current) {
+      // 0.5 RPM rotation
+      meshRef.current.rotation.y += (Math.PI / 60) * (1 / 60) * 2
+    }
+  })
+
+  return (
+    <mesh ref={meshRef} position={[0, 1.8, -0.5]}>
+      <boxGeometry args={[0.5, 0.5, 0.5]} />
+      <meshStandardMaterial
+        color="#FFD700"
+        metalness={0.9}
+        roughness={0.1}
+        emissive="#FFD700"
+        emissiveIntensity={0.3}
+      />
+    </mesh>
+  )
+}
+
 // XR-specific ring positioning (in front of user)
 function XRRingDisplay() {
   const [selectedRingId, setSelectedRingId] = useState<string | null>(null)
   const shortlistItems = useShortlist()
   const [iwsdkReady, setIwsdkReady] = useState(false)
+  const [iwsdkCapabilities, setIwsdkCapabilities] = useState<string[]>([])
 
   useEffect(() => {
-    iwsdkManager.initialize().then((ready) => {
+    async function initIWSDK() {
+      const ready = await iwsdkManager.initialize()
       setIwsdkReady(ready)
+
       if (ready) {
-        console.log("[v0] IWSDK ready in XR scene")
+        const status = await iwsdkManager.getStatus()
+        const caps = Object.entries(status.capabilities)
+          .filter(([_, v]) => v)
+          .map(([k]) => k)
+        setIwsdkCapabilities(caps)
+
+        Analytics.iwsdkInitialized(ready, caps)
       }
-    })
+    }
+    initIWSDK()
   }, [])
 
   // Position rings in an arc in front of user at standing height
@@ -45,16 +80,7 @@ function XRRingDisplay() {
 
   return (
     <>
-      <mesh position={[0, 1.8, -0.5]}>
-        <boxGeometry args={[0.5, 0.5, 0.5]} />
-        <meshStandardMaterial
-          color="#FFD700"
-          metalness={0.9}
-          roughness={0.1}
-          emissive="#FFD700"
-          emissiveIntensity={0.3}
-        />
-      </mesh>
+      <RotatingGoldBox />
 
       {/* Gold test box label */}
       <Text position={[0, 2.4, -0.5]} fontSize={0.08} color="#FFD700" anchorX="center">

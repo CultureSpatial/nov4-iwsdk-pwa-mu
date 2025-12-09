@@ -408,4 +408,30 @@ export const Analytics = {
       properties: { object_id: objectId, interaction_type: interactionType },
       platform: "horizon",
     }),
+
+  // ===== IWSDK-SPECIFIC EVENTS =====
+  iwsdkInitialized: (success: boolean, capabilities: string[]) => {
+    trackEvent({
+      event: "iwsdk_initialized",
+      properties: {
+        success,
+        capabilities,
+        capability_count: capabilities.length,
+      },
+      platform: "web",
+    })
+  },
+
+  spatialAnchorCreated: (anchorId: string, position: [number, number, number]) => {
+    trackEvent({
+      event: "spatial_anchor_created",
+      properties: {
+        anchor_id: anchorId,
+        position_x: position[0],
+        position_y: position[1],
+        position_z: position[2],
+      },
+      platform: "web",
+    })
+  },
 }
