@@ -32,6 +32,14 @@ export default function IWSDKTestPage() {
   const [error, setError] = useState<string | null>(null)
   const [passthroughActive, setPassthroughActive] = useState(false)
   const [passthroughLoading, setPassthroughLoading] = useState(false)
+  const [xrDiagnostics, setXrDiagnostics] = useState<{
+    hasNavigatorXR: boolean
+    immersiveVRSupported: boolean | null
+    immersiveARSupported: boolean | null
+    inlineSupported: boolean | null
+    xrObject: string
+    error: string | null
+  } | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -44,6 +52,9 @@ export default function IWSDKTestPage() {
       setError(null)
 
       try {
+        addTestResult("Running XR diagnostics...")
+        await runXRDiagnostics()
+
         // Test 1: Initialize IWSDK
         addTestResult("Initializing IWSDK...")
         const initialized = await iwsdkManager.initialize()
@@ -113,6 +124,98 @@ export default function IWSDKTestPage() {
       }
     }
 
+    async function runXRDiagnostics() {
+      const diagnostics: typeof xrDiagnostics = {
+        hasNavigatorXR: false,
+        immersiveVRSupported: null,
+        immersiveARSupported: null,
+        inlineSupported: null,
+        xrObject: "Not available",
+        error: null,
+      }
+
+      try {
+        // Check if navigator.xr exists
+        if (typeof navigator === "undefined") {
+          diagnostics.error = "Navigator not available (SSR)"
+          setXrDiagnostics(diagnostics)
+          addTestResult("XR Diagnostics: Navigator not available")
+          return
+        }
+
+        diagnostics.hasNavigatorXR = !!navigator.xr
+        console.log("[v0] XR Diagnostics: navigator.xr exists:", diagnostics.hasNavigatorXR)
+        addTestResult(`navigator.xr exists: ${diagnostics.hasNavigatorXR}`)
+
+        if (!navigator.xr) {
+          diagnostics.error = "WebXR not supported in this browser"
+          setXrDiagnostics(diagnostics)
+          addTestResult("XR Diagnostics: WebXR not supported")
+          return
+        }
+
+        // Log the XR object details
+        diagnostics.xrObject = JSON.stringify(Object.keys(navigator.xr))
+        console.log("[v0] XR Diagnostics: navigator.xr object:", navigator.xr)
+        console.log("[v0] XR Diagnostics: Available methods:", Object.keys(navigator.xr))
+        addTestResult(`XR methods: ${diagnostics.xrObject}`)
+
+        // Check immersive-vr support with detailed logging
+        try {
+          console.log("[v0] XR Diagnostics: Checking immersive-vr support...")
+          const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
+          diagnostics.immersiveVRSupported = vrSupported
+          console.log("[v0] XR Diagnostics: immersive-vr supported:", vrSupported)
+          addTestResult(`immersive-vr supported: ${vrSupported}`)
+
+          if (vrSupported) {
+            console.log("[v0] XR Diagnostics: Available features:", navigator.xr)
+            addTestResult("VR is supported - can attempt requestSession")
+          }
+        } catch (vrError) {
+          const msg = vrError instanceof Error ? vrError.message : String(vrError)
+          console.error("[v0] XR Diagnostics: immersive-vr check failed:", msg)
+          diagnostics.immersiveVRSupported = false
+          addTestResult(`immersive-vr check error: ${msg}`)
+        }
+
+        // Check immersive-ar support
+        try {
+          console.log("[v0] XR Diagnostics: Checking immersive-ar support...")
+          const arSupported = await navigator.xr.isSessionSupported("immersive-ar")
+          diagnostics.immersiveARSupported = arSupported
+          console.log("[v0] XR Diagnostics: immersive-ar supported:", arSupported)
+          addTestResult(`immersive-ar supported: ${arSupported}`)
+        } catch (arError) {
+          const msg = arError instanceof Error ? arError.message : String(arError)
+          console.error("[v0] XR Diagnostics: immersive-ar check failed:", msg)
+          diagnostics.immersiveARSupported = false
+          addTestResult(`immersive-ar check error: ${msg}`)
+        }
+
+        // Check inline support
+        try {
+          console.log("[v0] XR Diagnostics: Checking inline support...")
+          const inlineSupported = await navigator.xr.isSessionSupported("inline")
+          diagnostics.inlineSupported = inlineSupported
+          console.log("[v0] XR Diagnostics: inline supported:", inlineSupported)
+          addTestResult(`inline supported: ${inlineSupported}`)
+        } catch (inlineError) {
+          const msg = inlineError instanceof Error ? inlineError.message : String(inlineError)
+          console.error("[v0] XR Diagnostics: inline check failed:", msg)
+          diagnostics.inlineSupported = false
+        }
+
+        setXrDiagnostics(diagnostics)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.error("[v0] XR Diagnostics error:", msg)
+        diagnostics.error = msg
+        setXrDiagnostics(diagnostics)
+        addTestResult(`XR Diagnostics error: ${msg}`)
+      }
+    }
+
     initializeTests()
 
     return () => {
@@ -178,11 +281,25 @@ export default function IWSDKTestPage() {
       } else {
         // Start passthrough
         addTestResult("Initiating passthrough camera...")
+        console.log("[v0] Starting passthrough - checking XR state first...")
+
+        if (navigator.xr) {
+          try {
+            const vrCheck = await navigator.xr.isSessionSupported("immersive-vr")
+            console.log("[v0] Pre-passthrough VR check:", vrCheck)
+            addTestResult(`Pre-check: immersive-vr = ${vrCheck}`)
+          } catch (e) {
+            console.log("[v0] Pre-passthrough VR check error:", e)
+          }
+        }
+
         const result = await iwsdkManager.startPassthroughCamera()
         setPassthroughActive(result.success)
 
         if (result.success) {
           addTestResult("Passthrough camera STARTED successfully!")
+          addTestResult(`Session: ${result.session ? "Active" : "No session object"}`)
+          addTestResult(`Reference Space: ${result.referenceSpace ? "Available" : "Not available"}`)
           if (result.error) {
             addTestResult(`Note: ${result.error}`)
           }
@@ -196,6 +313,56 @@ export default function IWSDKTestPage() {
       setPassthroughActive(false)
     } finally {
       setPassthroughLoading(false)
+    }
+  }
+
+  async function testManualXRSession() {
+    addTestResult("Testing manual XR session request...")
+    console.log("[v0] Manual XR Session Test starting...")
+
+    if (!navigator.xr) {
+      addTestResult("ERROR: navigator.xr not available")
+      return
+    }
+
+    try {
+      // Test 1: Check support first
+      console.log("[v0] Checking immersive-vr support...")
+      const supported = await navigator.xr.isSessionSupported("immersive-vr")
+      console.log("[v0] immersive-vr supported:", supported)
+      addTestResult(`Support check: ${supported}`)
+
+      if (!supported) {
+        addTestResult("immersive-vr not supported - cannot proceed")
+        return
+      }
+
+      // Test 2: Try minimal session request
+      console.log("[v0] Requesting minimal immersive-vr session...")
+      addTestResult("Requesting session with no required features...")
+
+      const session = await navigator.xr.requestSession("immersive-vr", {
+        requiredFeatures: [],
+      })
+
+      console.log("[v0] Session obtained:", session)
+      addTestResult(`Session obtained: ${!!session}`)
+      addTestResult(`Session mode: ${session.mode || "unknown"}`)
+
+      // End session after brief delay
+      setTimeout(async () => {
+        try {
+          await session.end()
+          addTestResult("Test session ended successfully")
+          console.log("[v0] Test session ended")
+        } catch (e) {
+          console.log("[v0] Session end error:", e)
+        }
+      }, 2000)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error("[v0] Manual XR session error:", e)
+      addTestResult(`Session request FAILED: ${msg}`)
     }
   }
 
@@ -246,6 +413,80 @@ export default function IWSDKTestPage() {
             </AlertDescription>
           </Alert>
         )}
+
+        <Card className="border-blue-500/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-500" />
+              XR Diagnostics
+            </CardTitle>
+            <CardDescription>Detailed WebXR API status and session support</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {xrDiagnostics ? (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">navigator.xr</p>
+                  <Badge variant={xrDiagnostics.hasNavigatorXR ? "default" : "destructive"}>
+                    {xrDiagnostics.hasNavigatorXR ? "Available" : "Not Available"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">immersive-vr</p>
+                  <Badge variant={xrDiagnostics.immersiveVRSupported ? "default" : "secondary"}>
+                    {xrDiagnostics.immersiveVRSupported === null
+                      ? "Not checked"
+                      : xrDiagnostics.immersiveVRSupported
+                        ? "Supported"
+                        : "Not Supported"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">immersive-ar</p>
+                  <Badge variant={xrDiagnostics.immersiveARSupported ? "default" : "secondary"}>
+                    {xrDiagnostics.immersiveARSupported === null
+                      ? "Not checked"
+                      : xrDiagnostics.immersiveARSupported
+                        ? "Supported"
+                        : "Not Supported"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">inline</p>
+                  <Badge variant={xrDiagnostics.inlineSupported ? "default" : "secondary"}>
+                    {xrDiagnostics.inlineSupported === null
+                      ? "Not checked"
+                      : xrDiagnostics.inlineSupported
+                        ? "Supported"
+                        : "Not Supported"}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground">Running diagnostics...</div>
+            )}
+
+            {xrDiagnostics?.error && (
+              <Alert className="border-red-500 bg-red-500/10">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-red-200">{xrDiagnostics.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Separator />
+
+            <div>
+              <p className="text-sm font-medium mb-2">Manual XR Session Test</p>
+              <Button onClick={testManualXRSession} variant="outline" className="gap-2 bg-transparent">
+                <Box className="h-4 w-4" />
+                Test Manual XR Session
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                Attempts to start a minimal immersive-vr session with no required features.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Status Overview */}
         <Card>

@@ -5,7 +5,6 @@
  */
 
 import { Analytics } from "./analytics"
-import type { XRSessionMode, XRSessionInit } from "webxr"
 
 export interface IWSDKCapabilities {
   spatialAnchors: boolean
@@ -357,75 +356,69 @@ class IWSDKManager {
       this.xrGLContext = gl
       console.log("[v0] IWSDK: WebGL context created")
 
-      // Check AR support first
-      let sessionMode: XRSessionMode = "immersive-ar"
-      let arSupported = false
+      let session: XRSession | null = null
 
+      // First try: immersive-vr with minimal required features
       try {
-        arSupported = await navigator.xr.isSessionSupported("immersive-ar")
-        console.log("[v0] IWSDK: AR supported:", arSupported)
-      } catch (e) {
-        console.log("[v0] IWSDK: AR support check failed:", e)
-        if (this.metaDeviceInfo.isMetaQuest) {
-          arSupported = true
-        }
-      }
+        console.log("[v0] IWSDK: Trying immersive-vr with local-floor...")
+        session = await navigator.xr.requestSession("immersive-vr", {
+          requiredFeatures: ["local-floor"],
+          optionalFeatures: ["hand-tracking", "bounded-floor", "anchors"],
+        })
+        console.log("[v0] IWSDK: XR session established with local-floor")
+      } catch (firstError) {
+        console.log("[v0] IWSDK: First attempt failed:", firstError instanceof Error ? firstError.message : firstError)
 
-      if (!arSupported) {
-        // Try VR with passthrough as fallback
-        console.log("[v0] IWSDK: AR not supported, trying VR...")
+        // Fallback: absolute minimum - no required features
         try {
-          const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
-          if (vrSupported) {
-            sessionMode = "immersive-vr"
-          } else {
-            canvas.remove()
-            this.xrGLContext = null
-            return {
-              success: false,
-              session: null,
-              error: "Neither AR nor VR sessions are supported on this device",
-            }
-          }
-        } catch (vrError) {
-          console.log("[v0] IWSDK: VR session check failed:", vrError)
+          console.log("[v0] IWSDK: Trying fallback with no required features...")
+          session = await navigator.xr.requestSession("immersive-vr", {
+            requiredFeatures: [],
+          })
+          console.log("[v0] IWSDK: Fallback XR session established")
+        } catch (fallbackError) {
+          console.error("[v0] IWSDK: Even minimal XR session failed:", fallbackError)
           canvas.remove()
           this.xrGLContext = null
+
+          const errorMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
           return {
             success: false,
             session: null,
-            error: "Failed to check VR support",
+            error: `XR session failed: ${errorMsg}`,
           }
         }
       }
 
-      console.log("[v0] IWSDK: Requesting", sessionMode, "session...")
-      const sessionInit: XRSessionInit = {
-        requiredFeatures: ["local-floor"],
-        optionalFeatures: ["bounded-floor", "hand-tracking", "hit-test", "anchors", "plane-detection", "layers"],
-      }
-
-      const session = await navigator.xr.requestSession(sessionMode, sessionInit)
-      console.log("[v0] IWSDK: XR session created:", session)
-
       this.activeXRSession = session
+      console.log("[v0] IWSDK: XR session active:", session)
 
+      // Set up XR layer
       console.log("[v0] IWSDK: Setting up XR layer...")
       const baseLayer = new XRWebGLLayer(session, gl)
       await session.updateRenderState({ baseLayer })
       console.log("[v0] IWSDK: XR layer configured")
 
+      // Request reference space with fallback
       console.log("[v0] IWSDK: Requesting reference space...")
       let refSpace: XRReferenceSpace
       try {
         refSpace = await session.requestReferenceSpace("local-floor")
+        console.log("[v0] IWSDK: Got local-floor reference space")
       } catch (e) {
         console.log("[v0] IWSDK: local-floor not available, trying local...")
-        refSpace = await session.requestReferenceSpace("local")
+        try {
+          refSpace = await session.requestReferenceSpace("local")
+          console.log("[v0] IWSDK: Got local reference space")
+        } catch (e2) {
+          console.log("[v0] IWSDK: local not available, trying viewer...")
+          refSpace = await session.requestReferenceSpace("viewer")
+          console.log("[v0] IWSDK: Got viewer reference space")
+        }
       }
       this.xrReferenceSpace = refSpace
-      console.log("[v0] IWSDK: Reference space acquired:", refSpace)
 
+      // Start render loop
       const onXRFrame = (time: DOMHighResTimeStamp, frame: XRFrame) => {
         if (!this.activeXRSession) return
 
@@ -433,12 +426,8 @@ class IWSDKManager {
 
         const pose = frame.getViewerPose(this.xrReferenceSpace!)
         if (pose) {
-          // Clear and present - this activates passthrough on Quest
           gl.clearColor(0, 0, 0, 0)
           gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-          // The passthrough is now visible!
-          // In a full implementation, you would render 3D content here
         }
       }
 
@@ -460,24 +449,12 @@ class IWSDKManager {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error("[v0] IWSDK: Passthrough camera error:", errorMsg)
 
-      // Clean up on error
       this.cleanupXRSession()
-
-      let userError = errorMsg
-      if (errorMsg.includes("permissions policy")) {
-        userError = "XR blocked by permissions policy (preview/iframe restriction)"
-      } else if (errorMsg.includes("NotSupportedError")) {
-        userError = "XR session type not supported on this device"
-      } else if (errorMsg.includes("SecurityError")) {
-        userError = "XR requires user gesture or secure context"
-      } else if (errorMsg.includes("InvalidStateError")) {
-        userError = "XR session already active or invalid state"
-      }
 
       return {
         success: false,
         session: null,
-        error: userError,
+        error: errorMsg,
       }
     }
   }

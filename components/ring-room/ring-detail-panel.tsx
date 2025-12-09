@@ -7,7 +7,7 @@ import { Canvas } from "@react-three/fiber"
 import { OrbitControls, Environment, PerspectiveCamera } from "@react-three/drei"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { X, Heart, Share2, Ruler, ChevronLeft, ChevronRight, Smartphone } from "lucide-react"
+import { X, Heart, Share2, Ruler, ChevronLeft, ChevronRight, Smartphone, Loader2 } from "lucide-react"
 import type { RingData } from "@/lib/ring-data"
 import { RING_CATALOG } from "@/lib/ring-data"
 import { Analytics } from "@/lib/analytics"
@@ -19,6 +19,7 @@ interface RingDetailPanelProps {
   onAddToShortlist: () => void
   isInShortlist: boolean
   onNavigate?: (ringId: string) => void
+  onTryInAR?: (ring: RingData) => Promise<void>
 }
 
 function Ring360Viewer({ ring }: { ring: RingData }) {
@@ -26,7 +27,6 @@ function Ring360Viewer({ ring }: { ring: RingData }) {
   const rotationRef = useRef(0)
 
   useEffect(() => {
-    // Track rotation for analytics
     const interval = setInterval(() => {
       if (controlsRef.current) {
         const newRotation = controlsRef.current.getAzimuthalAngle()
@@ -95,9 +95,18 @@ function Ring360Viewer({ ring }: { ring: RingData }) {
   )
 }
 
-export function RingDetailPanel({ ring, onClose, onAddToShortlist, isInShortlist, onNavigate }: RingDetailPanelProps) {
+export function RingDetailPanel({
+  ring,
+  onClose,
+  onAddToShortlist,
+  isInShortlist,
+  onNavigate,
+  onTryInAR,
+}: RingDetailPanelProps) {
   const [startTime] = useState(Date.now())
   const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [isLoadingAR, setIsLoadingAR] = useState(false)
+  const [arError, setArError] = useState<string | null>(null)
 
   useEffect(() => {
     Analytics.ringDetailOpened(ring.id, ring.name)
@@ -153,10 +162,24 @@ export function RingDetailPanel({ ring, onClose, onAddToShortlist, isInShortlist
   const prevRing = RING_CATALOG[(currentIndex - 1 + RING_CATALOG.length) % RING_CATALOG.length]
   const nextRing = RING_CATALOG[(currentIndex + 1) % RING_CATALOG.length]
 
-  const handleTryInAR = () => {
+  const handleTryInAR = async () => {
     Analytics.tryInArClicked(ring.id, ring.name)
-    // Would launch XR mode focused on this ring
     console.log("[v0] Try in AR clicked for:", ring.id)
+
+    if (onTryInAR) {
+      setIsLoadingAR(true)
+      setArError(null)
+      try {
+        await onTryInAR(ring)
+      } catch (error) {
+        console.error("[v0] AR failed:", error)
+        setArError(error instanceof Error ? error.message : "AR not available")
+      } finally {
+        setIsLoadingAR(false)
+      }
+    } else {
+      setArError("AR not available on this device")
+    }
   }
 
   const triggerHaptic = () => {
@@ -303,10 +326,22 @@ export function RingDetailPanel({ ring, onClose, onAddToShortlist, isInShortlist
               {isInShortlist ? "In Shortlist" : "Add to Shortlist"}
             </Button>
 
-            <Button variant="outline" className="w-full bg-transparent" size="lg" onClick={handleTryInAR}>
-              <Smartphone className="h-5 w-5 mr-2" />
-              Try in AR
+            <Button
+              variant="outline"
+              className="w-full bg-transparent"
+              size="lg"
+              onClick={handleTryInAR}
+              disabled={isLoadingAR}
+            >
+              {isLoadingAR ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <Smartphone className="h-5 w-5 mr-2" />
+              )}
+              {isLoadingAR ? "Starting AR..." : "Try in AR"}
             </Button>
+
+            {arError && <p className="text-xs text-red-500 text-center">{arError}</p>}
 
             <Button variant="ghost" className="w-full" size="lg">
               <Share2 className="h-5 w-5 mr-2" />

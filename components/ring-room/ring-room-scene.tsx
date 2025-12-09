@@ -21,6 +21,10 @@ import { RING_CATALOG } from "@/lib/ring-data"
 import { shortlistManager } from "@/lib/shortlist-manager"
 import { Analytics } from "@/lib/analytics"
 import { useSyncExternalStore } from "react"
+import { iwsdkManager } from "@/lib/iwsdk-integration"
+import type { RingData } from "@/lib/ring-data"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
 function useShortlist() {
   return useSyncExternalStore(
@@ -186,6 +190,7 @@ export function RingRoomScene() {
   const [canvasReady, setCanvasReady] = useState(false)
   const [renderError, setRenderError] = useState<string | null>(null)
   const [xrSession, setXrSession] = useState<XRSession | null>(null)
+  const [arRing, setArRing] = useState<RingData | null>(null)
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
   const showPortraitWarning = usePortraitWarning()
@@ -264,9 +269,43 @@ export function RingRoomScene() {
     setXrSession(session)
   }, [])
 
-  const handleExitXR = useCallback(() => {
+  const handleExitXR = useCallback(async () => {
     console.log("[v0] XR exit requested")
+    await iwsdkManager.stopPassthroughCamera()
     setXrSession(null)
+    setArRing(null)
+  }, [])
+
+  const handleTryInAR = useCallback(async (ring: RingData) => {
+    console.log("[v0] Starting AR for ring:", ring.id)
+
+    // Initialize IWSDK if needed
+    const status = await iwsdkManager.initialize()
+    console.log("[v0] IWSDK status:", status)
+
+    if (!status.isInitialized) {
+      throw new Error("IWSDK failed to initialize")
+    }
+
+    // Try to start passthrough camera
+    const result = await iwsdkManager.startPassthroughCamera()
+    console.log("[v0] Passthrough camera result:", result)
+
+    if (!result.success) {
+      throw new Error(result.error || "Failed to start passthrough camera")
+    }
+
+    // Store the ring being viewed in AR
+    setArRing(ring)
+
+    // Close the detail panel and switch to AR view
+    setSelectedRingId(null)
+
+    // Set up the XR session from the passthrough result
+    const session = iwsdkManager.getActiveSession()
+    if (session) {
+      setXrSession(session)
+    }
   }, [])
 
   if (xrSession) {
@@ -291,6 +330,14 @@ export function RingRoomScene() {
       className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800"
       style={{ minHeight: "100vh", minWidth: "100vw" }}
     >
+      <Link
+        href="/"
+        className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg backdrop-blur-sm transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm font-medium">Home</span>
+      </Link>
+
       {showPortraitWarning && (
         <div className="absolute inset-0 z-50 bg-slate-900/95 flex flex-col items-center justify-center p-8 text-center">
           <div className="mb-6">
@@ -317,7 +364,7 @@ export function RingRoomScene() {
       )}
 
       {!isQuest && (
-        <div className="absolute top-20 left-4 z-10 bg-blue-500/20 text-blue-200 px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
+        <div className="absolute top-16 left-4 z-10 bg-blue-500/20 text-blue-200 px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
           Desktop Mode: Use mouse to orbit and zoom
         </div>
       )}
@@ -391,6 +438,7 @@ export function RingRoomScene() {
           }}
           isInShortlist={isInShortlist(selectedRing.id)}
           onNavigate={handleNavigate}
+          onTryInAR={handleTryInAR}
         />
       )}
 
@@ -401,7 +449,7 @@ export function RingRoomScene() {
         onClear={() => shortlistManager.clear()}
       />
 
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-16 left-4 z-10 mt-8">
         <h1 className="text-2xl font-bold text-white">Ring Room</h1>
         <p className="text-sm text-white/70">Tap a ring to view details | Drag down to shortlist</p>
         {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized Performance</p>}
