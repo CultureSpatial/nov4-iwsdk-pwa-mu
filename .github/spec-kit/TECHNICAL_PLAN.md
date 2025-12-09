@@ -1,63 +1,49 @@
-# Emerald Gem AR Platform - Technical Plan
+# Ring Room AR Demo - Technical Plan
 
 ## Architecture Overview
 
-### Multi-Platform Strategy
+### Ring Room Demo Flow
 
 \`\`\`
 ┌─────────────────────────────────────────────────┐
 │  User Entry Points                               │
-│  • QR Code Scan (Physical Gem)                  │
+│  • QR Code Scan (Physical Ring Display)         │
 │  • Direct URL (Marketing)                       │
-│  • Meta Horizon World (VR/Mobile)               │
 └─────────────────┬───────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────┐
 │  Platform Detection & Routing                    │
 │  lib/device-detection.ts                        │
-│  • WebXR capable → Web PWA                      │
-│  • Meta Quest → Horizon VR                      │
-│  • Mobile → Universal AR SDK                    │
+│  • WebXR capable → Web AR Experience            │
+│  • Mobile → IWSDK Integration                   │
 └─────────────────┬───────────────────────────────┘
                   │
-        ┌─────────┴─────────┬───────────┐
-        │                   │           │
-        ▼                   ▼           ▼
-┌──────────────┐  ┌─────────────┐  ┌──────────────┐
-│  Web PWA     │  │ Meta Horizon│  │ Intersection │
-│  (React)     │  │ (TypeScript)│  │ Layer        │
-│              │  │             │  │              │
-│ • Camera     │  │ • VR World  │  │ • Asset      │
-│ • AR Booth   │  │ • Passthrough│  │   Bridge     │
-│ • Menu       │  │ • Gizmos    │  │ • State Sync │
-│ • Analytics  │  │ • Mobile AR │  │ • Analytics  │
-└──────┬───────┘  └──────┬──────┘  └──────┬───────┘
-       │                 │                │
-       └─────────────────┴────────────────┘
-                         │
-                         ▼
-            ┌────────────────────────┐
-            │  Unified Analytics     │
-            │  • Vercel Analytics    │
-            │  • Cross-platform      │
-            └────────────────────────┘
+                  ▼
+┌──────────────────────────────────────────────────┐
+│  Ring Room Experience                            │
+│  (React + Three.js + IWSDK)                     │
+│                                                  │
+│  • 3D Ring Visualization                        │
+│  • Try-On AR Experience                         │
+│  • Shortlist Management                         │
+│  • Analytics Tracking                           │
+└──────────────────────────────────────────────────┘
 \`\`\`
 
 ## Tech Stack
 
-### Web PWA (Foundation)
+### Web Application
 
 **Framework:** Next.js 16.0.0 (App Router)
 - React 19.2 (Server Components + Client Components)
 - TypeScript 5.x
 - Tailwind CSS 4.x
 
-**AR/Camera:**
-- Native WebRTC (getUserMedia API)
+**AR/3D:**
 - IWSDK (Immersive Web SDK)
-- Universal AR SDK (Zappar Mattercraft)
 - Three.js (3D rendering)
+- Native WebRTC (getUserMedia API)
 
 **State Management:**
 - React useState/useReducer (local state)
@@ -65,7 +51,6 @@
 - Context API (global state where needed)
 
 **Analytics:**
-<!-- Updated to Vercel Analytics only -->
 - @vercel/analytics (built-in, zero-config)
 
 **Deployment:**
@@ -73,37 +58,26 @@
 - Edge Functions (API routes)
 - CDN (static assets, 3D models)
 
-### Meta Horizon (Transmutation)
-
-**Platform:** Meta Horizon Worlds
-- Horizon Desktop Editor
-- TypeScript Gizmo Scripts
-- Mobile + VR support
-
-**API Access:**
-- Passthrough Camera API (experimental, Quest 3/3S)
-- Hand Interactions
-- UI Gizmos (panels, buttons, text)
-
-**Asset Pipeline:**
-- GLTF/GLB 3D models
-- Shared asset library with Web PWA
-- Format conversion tools
-
-### Intersection Layer
-
-**Purpose:** Bridge Web ↔ Horizon
-- Asset synchronization
-- State management
-- Analytics unification
-- Cross-platform event bus
-
-**Implementation:**
-- `/intersection/asset-bridge.ts`
-- `/intersection/state-sync.ts`
-- `/intersection/event-bridge.ts`
-
 ## Data Flow
+
+### Ring Room Experience
+
+\`\`\`
+User enters Ring Room
+       ↓
+Load Ring Data (lib/ring-data.ts)
+       ↓
+Initialize 3D Scene (Three.js)
+       ↓
+IWSDK AR Integration
+       ↓
+User Interaction:
+• Browse rings
+• Try on via AR
+• Add to shortlist
+       ↓
+Analytics tracking
+\`\`\`
 
 ### Camera System
 
@@ -121,42 +95,9 @@ Progressive Fallback:
        ↓
 <video> element (ref)
        ↓
-Canvas/WebGL (for filters)
+AR Overlay (Three.js)
        ↓
 Display + Capture
-\`\`\`
-
-### Analytics Flow
-
-<!-- Simplified to Vercel Analytics only -->
-\`\`\`
-User Action (web, mobile, VR)
-       ↓
-trackEvent() [lib/analytics.ts]
-       ↓
-Vercel Analytics track()
-       ↓
-Vercel Dashboard
-       ↓
-Product Insights
-\`\`\`
-
-### AR Content Rendering
-
-\`\`\`
-Cocktail Data (JSON)
-       ↓
-SWR fetch (/api/cocktails)
-       ↓
-Three.js Scene Setup
-       ↓
-Load GLTF Model
-       ↓
-Position in AR Space
-       ↓
-User Interaction (rotate, zoom)
-       ↓
-Analytics tracking
 \`\`\`
 
 ## API Endpoints
@@ -172,7 +113,7 @@ Analytics tracking
   properties: Record<string, any>
   type?: 'track' | 'identify'
   traits?: Record<string, any>
-  platform: 'web' | 'horizon' | 'mobile'
+  platform: 'web' | 'mobile'
 }
 \`\`\`
 
@@ -185,52 +126,13 @@ Analytics tracking
 }
 \`\`\`
 
-**Implementation:**
-- Forwards to Vercel Analytics
-- Error handling and retry logic
-- Rate limiting (1000 req/min)
-
-### /api/cocktails (GET)
-**Purpose:** Fetch cocktail menu data
-
-**Response:**
-\`\`\`typescript
-{
-  cocktails: Array<{
-    id: string
-    name: string
-    description: string
-    price: number
-    ingredients: string[]
-    model3d: string // URL to GLTF model
-    image: string
-    category: 'signature' | 'classic' | 'seasonal'
-  }>
-}
-\`\`\`
-
-### /api/photos/upload (POST)
-**Purpose:** Upload captured AR photos
-
-**Request:** FormData with image blob
-
-**Response:**
-\`\`\`typescript
-{
-  success: boolean
-  url: string
-  shareUrl: string
-}
-\`\`\`
-
 ## Environment Variables
 
 ### Required
 
-<!-- Removed Amplitude, using Vercel Analytics (zero-config) -->
 \`\`\`bash
 # Event Configuration
-NEXT_PUBLIC_EVENT_NAME="Royal Sonesta Seattle Launch"
+NEXT_PUBLIC_EVENT_NAME="Ring Room Demo"
 NEXT_PUBLIC_EVENT_DATE="2025-12-15"
 
 # Feature Flags
@@ -244,58 +146,43 @@ VERCEL_GIT_COMMIT_SHA=<commit_hash>
 VERCEL_GIT_COMMIT_REF=<branch_name>
 \`\`\`
 
-### Optional
+### Server-Side Only
 
-<!-- Removed NEXT_PUBLIC_8THWALL_APP_KEY from optional section - configure via Vercel dashboard instead -->
-\`\`\`bash
-\`\`\`
+Server-side API keys should be configured directly in the Vercel dashboard and never committed to code.
 
 ## File Structure
 
 \`\`\`
-emerald-gem-ar/
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── feature.md
-│   │   ├── bug.md
-│   │   └── competition.md
-│   └── spec-kit/
-│       ├── PROJECT_SPEC.md
-│       ├── TECHNICAL_PLAN.md
-│       └── TASK_BREAKDOWN.md
+ring-room-demo/
 ├── app/
 │   ├── api/
-│   │   ├── track/route.ts
-│   │   ├── cocktails/route.ts
-│   │   └── photos/upload/route.ts
-│   ├── ar/
-│   │   ├── photo-booth/page.tsx
-│   │   └── cocktails/page.tsx
-│   ├── dashboard/page.tsx
-│   ├── transformation/page.tsx
+│   │   └── track/route.ts
+│   ├── ring-room/
+│   │   ├── page.tsx
+│   │   ├── loading.tsx
+│   │   └── error.tsx
+│   ├── test/
+│   │   └── iwsdk/page.tsx
 │   ├── layout.tsx
-│   ├── layout-client.tsx
 │   ├── page.tsx
 │   └── globals.css
 ├── components/
+│   ├── ring-room/
+│   │   ├── ring-room-scene.tsx
+│   │   ├── shortlist-tray.tsx
+│   │   └── xr-ring-scene.tsx
 │   ├── camera/
 │   │   └── camera-feed.tsx
 │   └── ui/ (shadcn components)
 ├── lib/
 │   ├── analytics.ts
+│   ├── ring-data.ts
+│   ├── shortlist-manager.ts
+│   ├── iwsdk-integration.ts
 │   ├── camera-manager.ts
 │   └── device-detection.ts
-├── intersection/
-│   ├── asset-bridge.ts
-│   ├── state-sync.ts
-│   └── event-bridge.ts
 ├── docs/
-│   ├── CAMERA_ARCHITECTURE.md
-│   ├── META_HORIZON_CHALLENGE_STRATEGY.md
-│   └── GITHUB_PROJECTS_STRUCTURE.md
-├── public/
-│   ├── models/ (GLTF 3D assets)
-│   └── images/
+│   └── (documentation files)
 └── package.json
 \`\`\`
 
@@ -309,10 +196,11 @@ emerald-gem-ar/
 - Server-only secrets have no NEXT_PUBLIC_ prefix
 - Only accessible in API routes
 - Never sent to client bundle
+- Configure sensitive keys via Vercel dashboard only
 
 ### Camera Permissions
 - Request permissions with clear explanation
-- Handle denial gracefully (fallback to menu-only)
+- Handle denial gracefully
 - No video recording, only real-time stream
 
 ## Performance Optimization
@@ -334,30 +222,6 @@ emerald-gem-ar/
 - Route-based code splitting (Next.js automatic)
 - Dynamic imports for heavy components
 - Separate bundles for AR features
-
-### Caching
-- SWR for data fetching
-- Service Worker (PWA)
-- CDN for static assets
-- Browser caching headers
-
-## Testing Strategy
-
-### Manual Testing
-- Device matrix (iOS/Android, flagship/mid-range)
-- Browser compatibility
-- Camera permission flows
-- AR performance benchmarks
-
-### Automated Testing
-- Unit tests (Jest + React Testing Library)
-- E2E tests (Playwright)
-- Performance monitoring (Lighthouse CI)
-
-### Staging Environment
-- Vercel Preview deployments
-- Feature flags for gradual rollout
-- A/B testing infrastructure
 
 ## Deployment
 
@@ -388,36 +252,3 @@ export default {
 - Push to `main` → Vercel auto-deploys
 - Preview deployments for PRs
 - Environment variables via Vercel dashboard
-
-## Monitoring
-
-### Metrics
-- Vercel Analytics: DAU, MAU, funnels, Web Vitals, performance
-- Custom: Camera FPS, AR initialization time
-
-### Alerts
-- Error rate > 1%
-- Camera initialization failure > 10%
-- API latency > 500ms
-- Daily active users < threshold
-
-## Competition Submission Requirements
-
-### Deliverables
-1. Horizon world build (published, accessible)
-2. Mobile AR experience (iOS + Android)
-3. Documentation (README, architecture diagram)
-4. Demo video (< 3 min, showcasing Passthrough Camera + AI)
-5. Technical writeup (innovation highlights)
-
-### Meta Horizon Start Program
-- Enrollment required before Dec 9
-- Application: https://developer.meta.com/horizon/start
-- Approval time: 1-3 days
-
-### Judging Criteria
-- Innovation (Passthrough Camera + AI usage)
-- User experience (mobile + VR)
-- Technical execution (performance, polish)
-- Real-world deployment (Royal Sonesta proof)
-- Business viability (ROI model, scalability)
