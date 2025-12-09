@@ -115,6 +115,17 @@ export function RingRoomScene() {
         <Environment preset={isQuest ? "apartment" : "studio"} />
 
         <Suspense fallback={<LoadingFallback />}>
+          <mesh position={[0, 1.2, -0.25]}>
+            <boxGeometry args={[0.5, 0.5, 0.5]} />
+            <meshStandardMaterial
+              color="#FFD700"
+              metalness={0.9}
+              roughness={0.1}
+              emissive="#FFD700"
+              emissiveIntensity={0.3}
+            />
+          </mesh>
+
           {/* Ring models with quality setting */}
           {RING_CATALOG.map((ring, index) => (
             <RingModel

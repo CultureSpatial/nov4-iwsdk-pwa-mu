@@ -45,25 +45,24 @@ function XRRingDisplay() {
 
   return (
     <>
-      {/* Gold test box for Phase 1 verification */}
-      <mesh position={[0, 1.5, -1.2]}>
-        <boxGeometry args={[1, 1, 1]} />
+      <mesh position={[0, 1.8, -0.5]}>
+        <boxGeometry args={[0.5, 0.5, 0.5]} />
         <meshStandardMaterial
           color="#FFD700"
           metalness={0.9}
           roughness={0.1}
           emissive="#FFD700"
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.3}
         />
       </mesh>
 
       {/* Gold test box label */}
-      <Text position={[0, 2.6, -1.2]} fontSize={0.08} color="#FFD700" anchorX="center">
-        IWSDK Test Box
+      <Text position={[0, 2.4, -0.5]} fontSize={0.08} color="#FFD700" anchorX="center">
+        Phase 1: IWSDK Test
       </Text>
 
       {/* IWSDK Status indicator */}
-      <Text position={[0, 2.4, -1.2]} fontSize={0.05} color={iwsdkReady ? "#00FF41" : "#FF4444"} anchorX="center">
+      <Text position={[0, 2.25, -0.5]} fontSize={0.05} color={iwsdkReady ? "#00FF41" : "#FF4444"} anchorX="center">
         {iwsdkReady ? "IWSDK Active" : "IWSDK Inactive"}
       </Text>
 
