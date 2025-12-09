@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from "react"
 import { Canvas } from "@react-three/fiber"
-import { XR, Controllers, Hands, useXR, XROrigin } from "@react-three/xr"
+import { XR, Controllers, Hands, useXR } from "@react-three/xr"
 import { Environment, Text } from "@react-three/drei"
 import { RingModel } from "./ring-model"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
@@ -102,10 +102,8 @@ function XRScene() {
         <meshStandardMaterial color="#0a0a0a" metalness={0.9} roughness={0.5} />
       </mesh>
 
-      {/* XR Origin and content */}
-      <XROrigin>
-        <XRRingDisplay />
-      </XROrigin>
+      {/* Content now directly in XR context */}
+      <XRRingDisplay />
     </>
   )
 }
