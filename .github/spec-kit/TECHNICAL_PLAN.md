@@ -234,9 +234,9 @@ Analytics tracking
 
 \`\`\`bash
 # Analytics
-NEXT_PUBLIC_AMPLITUDE_API_KEY=<amplitude_key>
-NEXT_PUBLIC_CUSTOMERIO_SITE_ID=<site_id>
-CUSTOMERIO_API_KEY=<api_key> # Server-only
+NEXT_PUBLIC_AMPLITUDE_API_KEY=
+NEXT_PUBLIC_CUSTOMERIO_SITE_ID=
+CUSTOMERIO_API_KEY= # Server-only
 
 # Event Configuration
 NEXT_PUBLIC_EVENT_NAME="Royal Sonesta Seattle Launch"

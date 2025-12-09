@@ -7,7 +7,7 @@ Add these environment variables in the **Vars** section of the v0 sidebar:
 ### Analytics (Dual Stack)
 
 \`\`\`bash
-# Amplitude - Product Analytics
+# Amplitude - Product Analytics (get from https://amplitude.com)
 NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_api_key_here
 
 # Customer.io - Marketing Automation (already configured)

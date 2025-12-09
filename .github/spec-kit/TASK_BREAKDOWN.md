@@ -453,11 +453,7 @@ Configure environment variables in Vercel.
 - [ ] Verified in deployed preview
 
 **Variables:**
-- NEXT_PUBLIC_AMPLITUDE_API_KEY
-- CUSTOMERIO_API_KEY
-- NEXT_PUBLIC_CUSTOMERIO_SITE_ID
-- NEXT_PUBLIC_EVENT_NAME
-- NEXT_PUBLIC_EVENT_DATE
+See docs/ENVIRONMENT_VARIABLES.md for required variables list
 
 ---
 

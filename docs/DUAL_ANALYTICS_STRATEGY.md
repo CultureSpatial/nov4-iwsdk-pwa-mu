@@ -117,12 +117,12 @@ trackHorizonEvent('photo_captured', { filter_id: 'vr_frame_001' })
 Add these to your Vercel project:
 
 \`\`\`bash
-# Amplitude
-NEXT_PUBLIC_AMPLITUDE_API_KEY=your_amplitude_api_key
+# Amplitude (use your own API key from amplitude.com)
+NEXT_PUBLIC_AMPLITUDE_API_KEY=
 
 # Customer.io (existing)
-NEXT_PUBLIC_CUSTOMERIO_SITE_ID=your_site_id
-CUSTOMERIO_API_KEY=your_api_key
+NEXT_PUBLIC_CUSTOMERIO_SITE_ID=
+CUSTOMERIO_API_KEY=
 \`\`\`
 
 ## Analytics Use Cases
@@ -172,7 +172,9 @@ The `/dashboard` page displays unified metrics from both platforms:
 
 ### Local Development
 \`\`\`bash
-# Set env vars in .env.local
+# Set env vars in .env.local or Vercel Vars section
+# Get your Amplitude key from https://amplitude.com
+
 NEXT_PUBLIC_AMPLITUDE_API_KEY=test_key
 NEXT_PUBLIC_CUSTOMERIO_SITE_ID=test_site_id
 CUSTOMERIO_API_KEY=test_api_key
