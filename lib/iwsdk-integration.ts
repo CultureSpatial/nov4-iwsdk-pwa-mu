@@ -5,6 +5,7 @@
  */
 
 import { Analytics } from "./analytics"
+import type { XRSessionMode, XRSessionInit } from "webxr"
 
 export interface IWSDKCapabilities {
   spatialAnchors: boolean
@@ -36,6 +37,7 @@ export interface PassthroughSessionResult {
   success: boolean
   session: XRSession | null
   error?: string
+  referenceSpace?: XRReferenceSpace | null
 }
 
 function detectMetaDevice(): { isMetaQuest: boolean; deviceType: string; debugInfo: string } {
@@ -97,6 +99,9 @@ class IWSDKManager {
   private initPromise: Promise<boolean> | null = null
   private webXRSupport = { vr: false, ar: false, checked: false }
   private activeXRSession: XRSession | null = null
+  private xrReferenceSpace: XRReferenceSpace | null = null
+  private xrAnimationFrame: number | null = null
+  private xrGLContext: WebGLRenderingContext | WebGL2RenderingContext | null = null
 
   async initialize(): Promise<boolean> {
     // Prevent multiple initializations
@@ -309,8 +314,7 @@ class IWSDKManager {
     // End any existing session first
     if (this.activeXRSession) {
       try {
-        await this.activeXRSession.end()
-        this.activeXRSession = null
+        await this.stopPassthroughCamera()
         console.log("[v0] IWSDK: Ended existing XR session")
       } catch (e) {
         console.log("[v0] IWSDK: Error ending existing session:", e)
@@ -327,13 +331,41 @@ class IWSDKManager {
     }
 
     try {
+      console.log("[v0] IWSDK: Creating WebGL context for XR...")
+      const canvas = document.createElement("canvas")
+      canvas.style.position = "fixed"
+      canvas.style.top = "0"
+      canvas.style.left = "0"
+      canvas.style.width = "100vw"
+      canvas.style.height = "100vh"
+      canvas.style.zIndex = "99999"
+      canvas.id = "xr-passthrough-canvas"
+      document.body.appendChild(canvas)
+
+      const gl =
+        canvas.getContext("webgl2", { xrCompatible: true }) || canvas.getContext("webgl", { xrCompatible: true })
+
+      if (!gl) {
+        canvas.remove()
+        return {
+          success: false,
+          session: null,
+          error: "Failed to create WebGL context",
+        }
+      }
+
+      this.xrGLContext = gl
+      console.log("[v0] IWSDK: WebGL context created")
+
       // Check AR support first
+      let sessionMode: XRSessionMode = "immersive-ar"
       let arSupported = false
+
       try {
         arSupported = await navigator.xr.isSessionSupported("immersive-ar")
+        console.log("[v0] IWSDK: AR supported:", arSupported)
       } catch (e) {
         console.log("[v0] IWSDK: AR support check failed:", e)
-        // On Quest, assume AR is supported
         if (this.metaDeviceInfo.isMetaQuest) {
           arSupported = true
         }
@@ -341,62 +373,96 @@ class IWSDKManager {
 
       if (!arSupported) {
         // Try VR with passthrough as fallback
-        console.log("[v0] IWSDK: AR not supported, trying VR with passthrough...")
+        console.log("[v0] IWSDK: AR not supported, trying VR...")
         try {
           const vrSupported = await navigator.xr.isSessionSupported("immersive-vr")
           if (vrSupported) {
-            const session = await navigator.xr.requestSession("immersive-vr", {
-              optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking", "layers"],
-            })
-            this.activeXRSession = session
-
-            session.addEventListener("end", () => {
-              console.log("[v0] IWSDK: VR session ended")
-              this.activeXRSession = null
-            })
-
-            console.log("[v0] IWSDK: VR session started (passthrough may be available via system)")
+            sessionMode = "immersive-vr"
+          } else {
+            canvas.remove()
+            this.xrGLContext = null
             return {
-              success: true,
-              session,
-              error: "VR mode - passthrough available via Quest system settings",
+              success: false,
+              session: null,
+              error: "Neither AR nor VR sessions are supported on this device",
             }
           }
         } catch (vrError) {
-          console.log("[v0] IWSDK: VR session request failed:", vrError)
-        }
-
-        return {
-          success: false,
-          session: null,
-          error: "Neither AR nor VR sessions are supported on this device",
+          console.log("[v0] IWSDK: VR session check failed:", vrError)
+          canvas.remove()
+          this.xrGLContext = null
+          return {
+            success: false,
+            session: null,
+            error: "Failed to check VR support",
+          }
         }
       }
 
-      // Request AR session with passthrough features
-      console.log("[v0] IWSDK: Requesting immersive-ar session with passthrough...")
-      const session = await navigator.xr.requestSession("immersive-ar", {
+      console.log("[v0] IWSDK: Requesting", sessionMode, "session...")
+      const sessionInit: XRSessionInit = {
         requiredFeatures: ["local-floor"],
         optionalFeatures: ["bounded-floor", "hand-tracking", "hit-test", "anchors", "plane-detection", "layers"],
-      })
+      }
+
+      const session = await navigator.xr.requestSession(sessionMode, sessionInit)
+      console.log("[v0] IWSDK: XR session created:", session)
 
       this.activeXRSession = session
 
+      console.log("[v0] IWSDK: Setting up XR layer...")
+      const baseLayer = new XRWebGLLayer(session, gl)
+      await session.updateRenderState({ baseLayer })
+      console.log("[v0] IWSDK: XR layer configured")
+
+      console.log("[v0] IWSDK: Requesting reference space...")
+      let refSpace: XRReferenceSpace
+      try {
+        refSpace = await session.requestReferenceSpace("local-floor")
+      } catch (e) {
+        console.log("[v0] IWSDK: local-floor not available, trying local...")
+        refSpace = await session.requestReferenceSpace("local")
+      }
+      this.xrReferenceSpace = refSpace
+      console.log("[v0] IWSDK: Reference space acquired:", refSpace)
+
+      const onXRFrame = (time: DOMHighResTimeStamp, frame: XRFrame) => {
+        if (!this.activeXRSession) return
+
+        this.xrAnimationFrame = this.activeXRSession.requestAnimationFrame(onXRFrame)
+
+        const pose = frame.getViewerPose(this.xrReferenceSpace!)
+        if (pose) {
+          // Clear and present - this activates passthrough on Quest
+          gl.clearColor(0, 0, 0, 0)
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+          // The passthrough is now visible!
+          // In a full implementation, you would render 3D content here
+        }
+      }
+
+      this.xrAnimationFrame = session.requestAnimationFrame(onXRFrame)
+      console.log("[v0] IWSDK: Render loop started - passthrough should be active")
+
+      // Handle session end
       session.addEventListener("end", () => {
-        console.log("[v0] IWSDK: Passthrough session ended")
-        this.activeXRSession = null
+        console.log("[v0] IWSDK: XR session ended")
+        this.cleanupXRSession()
       })
 
-      console.log("[v0] IWSDK: Passthrough camera session started successfully")
       return {
         success: true,
         session,
+        referenceSpace: refSpace,
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       console.error("[v0] IWSDK: Passthrough camera error:", errorMsg)
 
-      // Provide more specific error messages
+      // Clean up on error
+      this.cleanupXRSession()
+
       let userError = errorMsg
       if (errorMsg.includes("permissions policy")) {
         userError = "XR blocked by permissions policy (preview/iframe restriction)"
@@ -404,6 +470,8 @@ class IWSDKManager {
         userError = "XR session type not supported on this device"
       } else if (errorMsg.includes("SecurityError")) {
         userError = "XR requires user gesture or secure context"
+      } else if (errorMsg.includes("InvalidStateError")) {
+        userError = "XR session already active or invalid state"
       }
 
       return {
@@ -414,27 +482,46 @@ class IWSDKManager {
     }
   }
 
+  private cleanupXRSession(): void {
+    console.log("[v0] IWSDK: Cleaning up XR session resources...")
+
+    if (this.xrAnimationFrame !== null && this.activeXRSession) {
+      this.activeXRSession.cancelAnimationFrame(this.xrAnimationFrame)
+      this.xrAnimationFrame = null
+    }
+
+    this.activeXRSession = null
+    this.xrReferenceSpace = null
+    this.xrGLContext = null
+
+    // Remove the canvas
+    const canvas = document.getElementById("xr-passthrough-canvas")
+    if (canvas) {
+      canvas.remove()
+      console.log("[v0] IWSDK: Removed XR canvas")
+    }
+  }
+
   async stopPassthroughCamera(): Promise<boolean> {
+    console.log("[v0] IWSDK: Stopping passthrough camera...")
+
     if (this.activeXRSession) {
       try {
+        // Cancel animation frame first
+        if (this.xrAnimationFrame !== null) {
+          this.activeXRSession.cancelAnimationFrame(this.xrAnimationFrame)
+          this.xrAnimationFrame = null
+        }
+
         await this.activeXRSession.end()
-        this.activeXRSession = null
-        console.log("[v0] IWSDK: Passthrough camera stopped")
-        return true
+        console.log("[v0] IWSDK: XR session ended successfully")
       } catch (e) {
-        console.error("[v0] IWSDK: Error stopping passthrough:", e)
-        return false
+        console.error("[v0] IWSDK: Error stopping XR session:", e)
       }
     }
+
+    this.cleanupXRSession()
     return true
-  }
-
-  isPassthroughActive(): boolean {
-    return this.activeXRSession !== null
-  }
-
-  getActiveSession(): XRSession | null {
-    return this.activeXRSession
   }
 
   async startRoomScanning(): Promise<boolean> {
