@@ -1,27 +1,5 @@
 "use client"
 
-import * as amplitude from "@amplitude/analytics-browser"
-
-let amplitudeInitialized = false
-
-export function initializeAmplitude() {
-  if (typeof window === "undefined" || amplitudeInitialized) return
-
-  const apiKey = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY
-  if (apiKey) {
-    amplitude.init(apiKey, {
-      defaultTracking: {
-        sessions: true,
-        pageViews: true,
-        formInteractions: true,
-        fileDownloads: true,
-      },
-    })
-    amplitudeInitialized = true
-    console.log("[v0] Amplitude initialized")
-  }
-}
-
 export interface AnalyticsEvent {
   event: string
   properties?: Record<string, any>
@@ -31,97 +9,21 @@ export interface AnalyticsEvent {
   enableLDU?: boolean
 }
 
+export function initializeAmplitude() {
+  // No-op - analytics removed
+}
+
 export function trackEvent(data: AnalyticsEvent) {
-  const { event, properties = {}, userId, platform = "web", sovereigntyCompliant = false, enableLDU = false } = data
-
-  if (userId && !sovereigntyCompliant) {
-    // We can allow anonymous local events, or strictly block everything.
-    // For now, we allow the function to proceed but tag it as limited.
-    console.log("[v0] User opted out of sovereignty compliance, tracking limited:", event, properties)
-    return
-  }
-
-  const enrichedProperties = {
-    ...properties,
-    platform,
-    timestamp: new Date().toISOString(),
-    url: typeof window !== "undefined" ? window.location.href : undefined,
-    data_processing_options: enableLDU ? ["LDU"] : [],
-    data_processing_options_country: enableLDU ? 1 : 0,
-    data_processing_options_state: enableLDU ? 1000 : 0,
-  }
-
-  if (amplitudeInitialized) {
-    if (userId) {
-      amplitude.setUserId(userId)
-    }
-    amplitude.track(event, enrichedProperties)
-  }
-
-  if (typeof window !== "undefined") {
-    fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: userId || "anonymous",
-        event,
-        properties: enrichedProperties,
-      }),
-    }).catch((error) => {
-      console.error("[v0] Failed to track to Customer.io:", error)
-    })
-  }
-
-  console.log("[v0] Event tracked:", event, enrichedProperties)
+  const { event, properties = {} } = data
+  console.log("[v0] Event tracked (local only):", event, properties)
 }
 
 export function identifyUser(userId: string, traits?: Record<string, any>) {
-  if (amplitudeInitialized) {
-    amplitude.setUserId(userId)
-    if (traits) {
-      const identify = new amplitude.Identify()
-      Object.entries(traits).forEach(([key, value]) => {
-        identify.set(key, value)
-      })
-      amplitude.identify(identify)
-    }
-  }
-
-  if (typeof window !== "undefined") {
-    fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "identify",
-        userId,
-        traits: {
-          ...traits,
-          platform: "web",
-          identified_at: new Date().toISOString(),
-        },
-      }),
-    }).catch((error) => {
-      console.error("[v0] Failed to identify user to Customer.io:", error)
-    })
-  }
-
-  console.log("[v0] User identified:", userId, traits)
+  console.log("[v0] User identified (local only):", userId, traits)
 }
 
 export function requestDataDeletion(userId: string) {
-  if (typeof window !== "undefined") {
-    fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "delete_user_data",
-        userId,
-        timestamp: new Date().toISOString(),
-      }),
-    }).catch((error) => {
-      console.error("[v0] Failed to request data deletion:", error)
-    })
-  }
+  console.log("[v0] Data deletion requested (local only):", userId)
 }
 
 export const Analytics = {

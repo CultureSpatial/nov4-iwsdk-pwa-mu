@@ -1,7 +1,8 @@
 "use client"
 
-import { useRef, useState, useCallback, useEffect } from "react"
+import { useRef, useState, useCallback } from "react"
 import { Canvas } from "@react-three/fiber"
+import { XR, Controllers, Hands, useXR } from "@react-three/xr"
 import { Environment, Text } from "@react-three/drei"
 import { RingModel } from "./ring-model"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
@@ -83,6 +84,8 @@ function XRRingDisplay() {
 }
 
 function XRScene() {
+  const { isPresenting } = useXR()
+
   return (
     <>
       {/* Lighting */}
@@ -99,7 +102,7 @@ function XRScene() {
         <meshStandardMaterial color="#0a0a0a" metalness={0.9} roughness={0.5} />
       </mesh>
 
-      {/* Ring display */}
+      {/* XRRingDisplay */}
       <XRRingDisplay />
     </>
   )
@@ -113,27 +116,14 @@ interface XRRingSceneProps {
 export function XRRingScene({ xrSession, onSessionEnd }: XRRingSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  useEffect(() => {
-    if (xrSession) {
-      const handleEnd = () => {
-        console.log("[v0] XR session ended")
-        onSessionEnd()
-      }
-      xrSession.addEventListener("end", handleEnd)
-      return () => {
-        xrSession.removeEventListener("end", handleEnd)
-      }
-    }
-  }, [xrSession, onSessionEnd])
-
   return (
     <div className="w-full h-screen">
-      <Canvas
-        ref={canvasRef}
-        gl={{ antialias: true, alpha: true, xr: { enabled: true } }}
-        camera={{ position: [0, 1.6, 0], fov: 70 }}
-      >
-        <XRScene />
+      <Canvas ref={canvasRef} gl={{ antialias: true, alpha: true }} camera={{ position: [0, 1.6, 0], fov: 70 }}>
+        <XR>
+          <Controllers />
+          <Hands />
+          <XRScene />
+        </XR>
       </Canvas>
     </div>
   )
