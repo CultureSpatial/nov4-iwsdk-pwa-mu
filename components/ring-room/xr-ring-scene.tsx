@@ -102,7 +102,7 @@ function XRScene() {
         <meshStandardMaterial color="#0a0a0a" metalness={0.9} roughness={0.5} />
       </mesh>
 
-      {/* Content now directly in XR context */}
+      {/* XRRingDisplay */}
       <XRRingDisplay />
     </>
   )
