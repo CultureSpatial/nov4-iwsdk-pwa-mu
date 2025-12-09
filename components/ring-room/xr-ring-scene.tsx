@@ -1,12 +1,13 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
 import { XR, Controllers, Hands, useXR } from "@react-three/xr"
 import { Environment, Text } from "@react-three/drei"
 import { RingModel } from "./ring-model"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
 import { useSyncExternalStore } from "react"
+import { iwsdkManager } from "@/lib/iwsdk-integration"
 
 // Singleton shortlist manager
 const shortlistManager = createShortlistManager()
@@ -19,6 +20,16 @@ function useShortlist() {
 function XRRingDisplay() {
   const [selectedRingId, setSelectedRingId] = useState<string | null>(null)
   const shortlistItems = useShortlist()
+  const [iwsdkReady, setIwsdkReady] = useState(false)
+
+  useEffect(() => {
+    iwsdkManager.initialize().then((ready) => {
+      setIwsdkReady(ready)
+      if (ready) {
+        console.log("[v0] IWSDK ready in XR scene")
+      }
+    })
+  }, [])
 
   // Position rings in an arc in front of user at standing height
   const ringPositions: [number, number, number][] = [
@@ -34,6 +45,28 @@ function XRRingDisplay() {
 
   return (
     <>
+      {/* Gold test box for Phase 1 verification */}
+      <mesh position={[0, 1.5, -1.2]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          metalness={0.9}
+          roughness={0.1}
+          emissive="#FFD700"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+
+      {/* Gold test box label */}
+      <Text position={[0, 2.6, -1.2]} fontSize={0.08} color="#FFD700" anchorX="center">
+        IWSDK Test Box
+      </Text>
+
+      {/* IWSDK Status indicator */}
+      <Text position={[0, 2.4, -1.2]} fontSize={0.05} color={iwsdkReady ? "#00FF41" : "#FF4444"} anchorX="center">
+        {iwsdkReady ? "IWSDK Active" : "IWSDK Inactive"}
+      </Text>
+
       {/* Display platform */}
       <mesh position={[0, 0.8, -0.9]} rotation={[-Math.PI / 6, 0, 0]}>
         <boxGeometry args={[1.2, 0.05, 0.6]} />
