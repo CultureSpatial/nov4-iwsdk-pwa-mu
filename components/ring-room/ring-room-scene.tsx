@@ -81,11 +81,13 @@ export function RingRoomScene() {
   )
 
   const handleEnterXR = useCallback((session: XRSession) => {
+    console.log("[v0] XR Session started successfully")
     setXrSession(session)
     setIsInXR(true)
   }, [])
 
   const handleExitXR = useCallback(() => {
+    console.log("[v0] XR Session ended")
     setXrSession(null)
     setIsInXR(false)
   }, [])
@@ -103,14 +105,21 @@ export function RingRoomScene() {
 
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+      {/* Display desktop mode indicator when not in XR */}
+      {!isQuest && !isInXR && (
+        <div className="absolute top-20 left-4 z-10 bg-blue-500/20 text-blue-200 px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
+          Desktop Mode: Use mouse to orbit and zoom
+        </div>
+      )}
+
       {/* 3D Canvas with performance optimizations */}
       <Canvas
         gl={{
-          antialias: !isQuest, // Disable AA on Quest
+          antialias: !isQuest,
           powerPreference: "high-performance",
           alpha: false,
         }}
-        dpr={isQuest ? 1 : [1, 2]} // Fixed DPR on Quest
+        dpr={isQuest ? 1 : [1, 2]}
       >
         <AdaptiveDpr pixelated />
 
@@ -118,13 +127,7 @@ export function RingRoomScene() {
 
         {/* Lighting - reduced on Quest */}
         <ambientLight intensity={isQuest ? 0.5 : 0.4} />
-        <spotLight
-          position={[5, 5, 5]}
-          angle={0.3}
-          penumbra={1}
-          intensity={1}
-          castShadow={!isQuest} // No shadows on Quest
-        />
+        <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow={!isQuest} />
         {!isQuest && <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />}
         {!isQuest && <pointLight position={[0, 3, 0]} intensity={0.3} color="#fff5e6" />}
 
@@ -167,7 +170,7 @@ export function RingRoomScene() {
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 2.2}
           target={[0, 0, 0]}
-          enableDamping={!isQuest} // No damping on Quest for snappier feel
+          enableDamping={!isQuest}
         />
       </Canvas>
 
@@ -197,11 +200,12 @@ export function RingRoomScene() {
       <div className="absolute top-4 left-4 z-10">
         <h1 className="text-2xl font-bold text-white">Ring Room</h1>
         <p className="text-sm text-white/70">Tap a ring to view details | Drag down to shortlist</p>
-        {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized</p>}
+        {isQuest && <p className="text-xs text-emerald-400 mt-1">Quest Mode: Optimized + Auto-Start VR</p>}
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
-        <XRButton onEnterXR={handleEnterXR} onExitXR={handleExitXR} />
+        {/* Enable auto-start on Quest */}
+        <XRButton onEnterXR={handleEnterXR} onExitXR={handleExitXR} autoStartOnQuest={true} />
         <button
           onClick={() => setShowPerf(!showPerf)}
           className="text-xs text-white/50 hover:text-white/80 transition-colors"

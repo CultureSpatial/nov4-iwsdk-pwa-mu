@@ -7,17 +7,18 @@ import { Headset, Smartphone, AlertCircle } from "lucide-react"
 interface XRButtonProps {
   onEnterXR: (session: XRSession) => void
   onExitXR: () => void
+  autoStartOnQuest?: boolean
 }
 
 type XRSupport = "supported" | "not-supported" | "checking" | "error"
 
-export function XRButton({ onEnterXR, onExitXR }: XRButtonProps) {
+export function XRButton({ onEnterXR, onExitXR, autoStartOnQuest = true }: XRButtonProps) {
   const [vrSupport, setVrSupport] = useState<XRSupport>("checking")
   const [arSupport, setArSupport] = useState<XRSupport>("checking")
   const [activeSession, setActiveSession] = useState<XRSession | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [autoStartAttempted, setAutoStartAttempted] = useState(false)
 
-  // Check WebXR support on mount
   useEffect(() => {
     async function checkXRSupport() {
       if (!navigator.xr) {
@@ -65,6 +66,14 @@ export function XRButton({ onEnterXR, onExitXR }: XRButtonProps) {
     }
   }, [onEnterXR, onExitXR])
 
+  useEffect(() => {
+    if (autoStartOnQuest && !autoStartAttempted && vrSupport === "supported" && /Quest/i.test(navigator.userAgent)) {
+      setAutoStartAttempted(true)
+      console.log("[v0] Auto-starting VR on Quest browser")
+      enterVR()
+    }
+  }, [autoStartOnQuest, autoStartAttempted, vrSupport, enterVR])
+
   const enterAR = useCallback(async () => {
     if (!navigator.xr) return
 
@@ -95,7 +104,6 @@ export function XRButton({ onEnterXR, onExitXR }: XRButtonProps) {
     }
   }, [activeSession, onExitXR])
 
-  // Active session - show exit button
   if (activeSession) {
     return (
       <Button onClick={exitXR} variant="destructive" size="lg" className="gap-2">
@@ -104,7 +112,6 @@ export function XRButton({ onEnterXR, onExitXR }: XRButtonProps) {
     )
   }
 
-  // Check if any XR is supported
   const hasXRSupport = vrSupport === "supported" || arSupport === "supported"
   const isChecking = vrSupport === "checking" || arSupport === "checking"
 
