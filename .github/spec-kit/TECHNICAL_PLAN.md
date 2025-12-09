@@ -39,8 +39,7 @@
                          ▼
             ┌────────────────────────┐
             │  Unified Analytics     │
-            │  • Amplitude           │
-            │  • Customer.io         │
+            │  • Vercel Analytics    │
             │  • Cross-platform      │
             └────────────────────────┘
 \`\`\`
@@ -66,8 +65,8 @@
 - Context API (global state where needed)
 
 **Analytics:**
-- @amplitude/analytics-browser 2.30.1 (client-side)
-- Customer.io CDP API (server-side via /api/track)
+<!-- Updated to Vercel Analytics only -->
+- @vercel/analytics (built-in, zero-config)
 
 **Deployment:**
 - Vercel (Next.js hosting)
@@ -129,20 +128,17 @@ Display + Capture
 
 ### Analytics Flow
 
+<!-- Simplified to Vercel Analytics only -->
 \`\`\`
 User Action (web, mobile, VR)
        ↓
 trackEvent() [lib/analytics.ts]
        ↓
-┌─────────────────┴─────────────────┐
-│                                   │
-▼                                   ▼
-Amplitude.track()           POST /api/track
-(client-side)              (server-side)
-       ↓                            ↓
-Amplitude Servers           Customer.io CDP
-       ↓                            ↓
-Product Dashboards          Marketing Automation
+Vercel Analytics track()
+       ↓
+Vercel Dashboard
+       ↓
+Product Insights
 \`\`\`
 
 ### AR Content Rendering
@@ -190,8 +186,7 @@ Analytics tracking
 \`\`\`
 
 **Implementation:**
-- Forwards to Customer.io CDP API
-- Parallel client-side Amplitude tracking
+- Forwards to Vercel Analytics
 - Error handling and retry logic
 - Rate limiting (1000 req/min)
 
@@ -232,12 +227,8 @@ Analytics tracking
 
 ### Required
 
+<!-- Removed Amplitude, using Vercel Analytics (zero-config) -->
 \`\`\`bash
-# Analytics
-NEXT_PUBLIC_AMPLITUDE_API_KEY=
-NEXT_PUBLIC_CUSTOMERIO_SITE_ID=
-CUSTOMERIO_API_KEY= # Server-only
-
 # Event Configuration
 NEXT_PUBLIC_EVENT_NAME="Royal Sonesta Seattle Launch"
 NEXT_PUBLIC_EVENT_DATE="2025-12-15"
@@ -300,7 +291,6 @@ emerald-gem-ar/
 │   ├── state-sync.ts
 │   └── event-bridge.ts
 ├── docs/
-│   ├── DUAL_ANALYTICS_STRATEGY.md
 │   ├── CAMERA_ARCHITECTURE.md
 │   ├── META_HORIZON_CHALLENGE_STRATEGY.md
 │   └── GITHUB_PROJECTS_STRUCTURE.md
@@ -314,11 +304,10 @@ emerald-gem-ar/
 
 ### Client-Side Safety
 - NEXT_PUBLIC_* variables exposed (by design)
-- Amplitude API key is read-only (safe to expose)
-- Customer.io Site ID is public identifier
+- Vercel Analytics is zero-config (no API keys needed)
 
 ### Server-Side Protection
-- CUSTOMERIO_API_KEY (no NEXT_PUBLIC_ prefix)
+- Server-only secrets have no NEXT_PUBLIC_ prefix
 - Only accessible in API routes
 - Never sent to client bundle
 
@@ -404,9 +393,7 @@ export default {
 ## Monitoring
 
 ### Metrics
-- Amplitude: DAU, MAU, funnels, retention
-- Customer.io: Campaign performance, user segments
-- Vercel Analytics: Performance, errors, Web Vitals
+- Vercel Analytics: DAU, MAU, funnels, Web Vitals, performance
 - Custom: Camera FPS, AR initialization time
 
 ### Alerts

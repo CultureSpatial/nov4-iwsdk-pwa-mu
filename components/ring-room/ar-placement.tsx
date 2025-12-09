@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from "react"
 import { useFrame } from "@react-three/fiber"
-import { useXR, useHitTest } from "@react-three/xr"
 import { Text } from "@react-three/drei"
 import { iwsdkManager } from "@/lib/iwsdk-integration"
 import { Analytics } from "@/lib/analytics"
@@ -12,6 +11,7 @@ interface ARPlacementProps {
   ring: Ring
   onPlaced?: (position: [number, number, number]) => void
   onReset?: () => void
+  isPresenting?: boolean
 }
 
 interface PlacedRing {
@@ -23,21 +23,10 @@ interface PlacedRing {
   anchorId?: string
 }
 
-export function ARPlacement({ ring, onPlaced, onReset }: ARPlacementProps) {
-  const { isPresenting } = useXR()
+export function ARPlacement({ ring, onPlaced, onReset, isPresenting = false }: ARPlacementProps) {
   const [placedRings, setPlacedRings] = useState<PlacedRing[]>([])
-  const [reticlePosition, setReticlePosition] = useState<[number, number, number] | null>(null)
   const [reticleVisible, setReticleVisible] = useState(false)
   const reticleRef = useRef<any>(null)
-
-  // Hit test for surface detection
-  useHitTest((hitMatrix) => {
-    if (reticleRef.current) {
-      hitMatrix.decompose(reticleRef.current.position, reticleRef.current.quaternion, reticleRef.current.scale)
-      setReticlePosition([reticleRef.current.position.x, reticleRef.current.position.y, reticleRef.current.position.z])
-      setReticleVisible(true)
-    }
-  })
 
   // Animate reticle
   useFrame((state) => {
@@ -46,33 +35,35 @@ export function ARPlacement({ ring, onPlaced, onReset }: ARPlacementProps) {
     }
   })
 
-  const placeRing = useCallback(async () => {
-    if (!reticlePosition || placedRings.length >= 3) return
+  const placeRing = useCallback(
+    async (position: [number, number, number]) => {
+      if (placedRings.length >= 3) return
 
-    const position = reticlePosition
-    let anchorId: string | undefined
+      let anchorId: string | undefined
 
-    // Create spatial anchor if IWSDK available
-    if (iwsdkManager.hasFullCapabilities()) {
-      const anchor = await iwsdkManager.createSpatialAnchor(position)
-      anchorId = anchor.id
-    }
+      // Create spatial anchor if IWSDK available
+      if (iwsdkManager.hasFullCapabilities()) {
+        const anchor = await iwsdkManager.createSpatialAnchor(position)
+        anchorId = anchor.id
+      }
 
-    const newPlacedRing: PlacedRing = {
-      id: `placed_${Date.now()}`,
-      ringId: ring.id,
-      position,
-      rotation: 0,
-      scale: 1,
-      anchorId,
-    }
+      const newPlacedRing: PlacedRing = {
+        id: `placed_${Date.now()}`,
+        ringId: ring.id,
+        position,
+        rotation: 0,
+        scale: 1,
+        anchorId,
+      }
 
-    setPlacedRings((prev) => [...prev, newPlacedRing])
-    onPlaced?.(position)
+      setPlacedRings((prev) => [...prev, newPlacedRing])
+      onPlaced?.(position)
 
-    Analytics.ringPlacedInAR(ring.id, ring.name, position, !!anchorId)
-    console.log("[v0] ARPlacement: Ring placed at", position, "with anchor:", anchorId)
-  }, [reticlePosition, placedRings.length, ring, onPlaced])
+      Analytics.ringPlacedInAR(ring.id, ring.name, position, !!anchorId)
+      console.log("[v0] ARPlacement: Ring placed at", position, "with anchor:", anchorId)
+    },
+    [placedRings.length, ring, onPlaced],
+  )
 
   const resetPlacements = useCallback(() => {
     // Delete spatial anchors

@@ -1,7 +1,6 @@
 "use client"
 
 import { useRef, useEffect, useState } from "react"
-import { Hands, useXR } from "@react-three/xr"
 import { Text } from "@react-three/drei"
 import { Analytics } from "@/lib/analytics"
 
@@ -10,10 +9,16 @@ interface HandTrackingProps {
   onPinchEnd?: (hand: "left" | "right") => void
   onPointStart?: (hand: "left" | "right", direction: [number, number, number]) => void
   showVisualFeedback?: boolean
+  isPresenting?: boolean
 }
 
-export function HandTracking({ onPinchStart, onPinchEnd, onPointStart, showVisualFeedback = true }: HandTrackingProps) {
-  const { isPresenting } = useXR()
+export function HandTracking({
+  onPinchStart,
+  onPinchEnd,
+  onPointStart,
+  showVisualFeedback = true,
+  isPresenting = false,
+}: HandTrackingProps) {
   const [leftPinching, setLeftPinching] = useState(false)
   const [rightPinching, setRightPinching] = useState(false)
   const [handTrackingAvailable, setHandTrackingAvailable] = useState(false)
@@ -55,8 +60,6 @@ export function HandTracking({ onPinchStart, onPinchEnd, onPointStart, showVisua
 
   return (
     <>
-      <Hands />
-
       {showVisualFeedback && (
         <>
           {/* Left hand pinch indicator */}
@@ -77,7 +80,7 @@ export function HandTracking({ onPinchStart, onPinchEnd, onPointStart, showVisua
 
           {/* Hand tracking status */}
           <Text position={[0, 2.0, -1]} fontSize={0.04} color="#10B981" anchorX="center">
-            Hand Tracking Active
+            Hand Tracking Available
           </Text>
         </>
       )}

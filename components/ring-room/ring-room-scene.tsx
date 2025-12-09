@@ -16,7 +16,6 @@ import { RingDetailPanel } from "./ring-detail-panel"
 import { ShortlistTray } from "./shortlist-tray"
 import { PerformanceMonitor } from "./performance-monitor"
 import { XRButton } from "./xr-button"
-import { XRRingScene } from "./xr-ring-scene"
 import { RING_CATALOG } from "@/lib/ring-data"
 import { shortlistManager } from "@/lib/shortlist-manager"
 import { Analytics } from "@/lib/analytics"
@@ -96,8 +95,6 @@ export function RingRoomScene() {
   const [showAddedFeedback, setShowAddedFeedback] = useState<string | null>(null)
   const [showPerf, setShowPerf] = useState(false)
   const [qualityLevel, setQualityLevel] = useState<"high" | "medium" | "low">("high")
-  const [xrSession, setXrSession] = useState<XRSession | null>(null)
-  const [isInXR, setIsInXR] = useState(false)
   const shortlistItems = useShortlist()
   const isQuest = useQuestDetection()
 
@@ -114,17 +111,13 @@ export function RingRoomScene() {
 
   const selectedRing = useMemo(() => RING_CATALOG.find((r) => r.id === selectedRingId), [selectedRingId])
 
-  const isInShortlist = useCallback(
-    (ringId: string) => shortlistManager.has(ringId),
-    [shortlistItems], // Re-evaluate when shortlist changes
-  )
+  const isInShortlist = useCallback((ringId: string) => shortlistManager.has(ringId), [shortlistItems])
 
   const handleDragToShortlist = useCallback((ring: (typeof RING_CATALOG)[0]) => {
     const added = shortlistManager.add(ring, "drag")
     if (added) {
       setShowAddedFeedback(ring.id)
       setTimeout(() => setShowAddedFeedback(null), 1500)
-      // Haptic feedback
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         navigator.vibrate(100)
       }
@@ -150,18 +143,12 @@ export function RingRoomScene() {
     setQualityLevel(level)
   }, [])
 
-  const handleEnterXR = useCallback(
-    (session: XRSession) => {
-      setXrSession(session)
-      setIsInXR(true)
-      Analytics.xrModeEntered("vr", isQuest ? "quest" : "desktop")
-    },
-    [isQuest],
-  )
+  const handleEnterXR = useCallback((session: XRSession) => {
+    console.log("[v0] XR session requested but temporarily disabled")
+  }, [])
 
   const handleExitXR = useCallback(() => {
-    setXrSession(null)
-    setIsInXR(false)
+    console.log("[v0] XR exit requested")
   }, [])
 
   const ringPositions: [number, number, number][] = [
@@ -169,10 +156,6 @@ export function RingRoomScene() {
     [0, 0, -0.5],
     [1.2, 0, 0],
   ]
-
-  if (isInXR && xrSession) {
-    return <XRRingScene xrSession={xrSession} onSessionEnd={handleExitXR} />
-  }
 
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">

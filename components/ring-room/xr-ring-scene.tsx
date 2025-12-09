@@ -2,10 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect } from "react"
 import { Canvas, useFrame } from "@react-three/fiber"
-import { XR, Controllers, Hands, useXR, useHitTest } from "@react-three/xr"
 import { Environment, Text } from "@react-three/drei"
 import { RingModel } from "./ring-model"
-import { HandTracking } from "./hand-tracking"
 import { RING_CATALOG, createShortlistManager } from "@/lib/ring-data"
 import { useSyncExternalStore } from "react"
 import { iwsdkManager } from "@/lib/iwsdk-integration"
@@ -45,12 +43,8 @@ function RotatingGoldBox() {
 // XR-specific ring positioning (in front of user)
 function XRRingDisplay() {
   const [selectedRingId, setSelectedRingId] = useState<string | null>(null)
-  const [placedRings, setPlacedRings] = useState<PlacedRing[]>([])
   const shortlistItems = useShortlist()
   const [iwsdkReady, setIwsdkReady] = useState(false)
-  const [iwsdkCapabilities, setIwsdkCapabilities] = useState<string[]>([])
-  const { isPresenting, session } = useXR()
-  const [isARMode, setIsARMode] = useState(false)
 
   useEffect(() => {
     async function initIWSDK() {
@@ -62,54 +56,11 @@ function XRRingDisplay() {
         const caps = Object.entries(status.capabilities)
           .filter(([_, v]) => v)
           .map(([k]) => k)
-        setIwsdkCapabilities(caps)
         Analytics.iwsdkInitialized(ready, caps)
       }
     }
     initIWSDK()
   }, [])
-
-  useEffect(() => {
-    if (session) {
-      // @ts-ignore - session.mode exists on XRSession
-      const mode = session.mode || "immersive-vr"
-      setIsARMode(mode === "immersive-ar")
-      console.log("[v0] XRRingScene: Session mode:", mode)
-    }
-  }, [session])
-
-  const handleARPlace = useCallback(
-    async (position: [number, number, number]) => {
-      if (placedRings.length >= 3) return
-
-      const selectedRing = selectedRingId ? RING_CATALOG.find((r) => r.id === selectedRingId) : RING_CATALOG[0]
-
-      if (!selectedRing) return
-
-      let anchorId: string | undefined
-
-      if (iwsdkManager.hasFullCapabilities()) {
-        const anchor = await iwsdkManager.createSpatialAnchor(position)
-        anchorId = anchor.id
-      }
-
-      const newPlaced: PlacedRing = {
-        id: `placed_${Date.now()}`,
-        position,
-        ringData: selectedRing,
-        anchorId,
-      }
-
-      setPlacedRings((prev) => [...prev, newPlaced])
-      Analytics.ringPlacedInAR(selectedRing.id, selectedRing.name, position, !!anchorId)
-
-      // Haptic feedback
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate(50)
-      }
-    },
-    [placedRings.length, selectedRingId],
-  )
 
   // Position rings in an arc in front of user at standing height
   const ringPositions: [number, number, number][] = [
@@ -137,63 +88,26 @@ function XRRingDisplay() {
         {iwsdkReady ? "IWSDK Active" : "IWSDK Inactive"}
       </Text>
 
-      {isARMode && (
-        <>
-          <Text position={[0, 2.1, -0.5]} fontSize={0.04} color="#10B981" anchorX="center">
-            AR Mode - Tap surfaces to place rings ({placedRings.length}/3)
-          </Text>
-          <ARReticle onPlace={handleARPlace} />
-        </>
-      )}
+      {/* Display platform */}
+      <mesh position={[0, 0.8, -0.9]} rotation={[-Math.PI / 6, 0, 0]}>
+        <boxGeometry args={[1.2, 0.05, 0.6]} />
+        <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.3} />
+      </mesh>
 
-      {/* Display platform - hide in AR mode */}
-      {!isARMode && (
-        <mesh position={[0, 0.8, -0.9]} rotation={[-Math.PI / 6, 0, 0]}>
-          <boxGeometry args={[1.2, 0.05, 0.6]} />
-          <meshStandardMaterial color="#1a1a2e" metalness={0.8} roughness={0.3} />
-        </mesh>
-      )}
-
-      {/* Catalog Rings - show in VR mode */}
-      {!isARMode &&
-        RING_CATALOG.map((ring, index) => (
-          <RingModel
-            key={ring.id}
-            ring={ring}
-            position={ringPositions[index]}
-            isSelected={selectedRingId === ring.id}
-            onSelect={() => setSelectedRingId(selectedRingId === ring.id ? null : ring.id)}
-            onDragToShortlist={() => {
-              if (!isInShortlist(ring.id)) {
-                shortlistManager.add(ring)
-              }
-            }}
-          />
-        ))}
-
-      {placedRings.map((placed) => (
-        <group key={placed.id} position={placed.position}>
-          <mesh>
-            <torusGeometry args={[0.015, 0.004, 32, 64]} />
-            <meshStandardMaterial
-              color={
-                placed.ringData.metal === "platinum"
-                  ? "#E5E4E2"
-                  : placed.ringData.metal === "gold"
-                    ? "#FFD700"
-                    : "#FFB7C5"
-              }
-              metalness={0.9}
-              roughness={0.1}
-            />
-          </mesh>
-          {placed.anchorId && (
-            <mesh position={[0, 0.03, 0]}>
-              <sphereGeometry args={[0.003, 16, 16]} />
-              <meshBasicMaterial color="#00FF41" />
-            </mesh>
-          )}
-        </group>
+      {/* Catalog Rings */}
+      {RING_CATALOG.map((ring, index) => (
+        <RingModel
+          key={ring.id}
+          ring={ring}
+          position={ringPositions[index]}
+          isSelected={selectedRingId === ring.id}
+          onSelect={() => setSelectedRingId(selectedRingId === ring.id ? null : ring.id)}
+          onDragToShortlist={() => {
+            if (!isInShortlist(ring.id)) {
+              shortlistManager.add(ring)
+            }
+          }}
+        />
       ))}
 
       {/* Shortlist display (floating panel to the side) */}
@@ -217,17 +131,13 @@ function XRRingDisplay() {
 
       {/* Instructions */}
       <Text position={[0, 1.6, -1]} fontSize={0.05} color="#ffffff" anchorX="center">
-        {isARMode ? "Point at surfaces and tap to place rings" : "Point and tap to select a ring"}
+        XR Mode - View rings in 3D space
       </Text>
-
-      <HandTracking showVisualFeedback={true} />
     </>
   )
 }
 
 function XRScene() {
-  const { isPresenting } = useXR()
-
   return (
     <>
       {/* Lighting */}
@@ -258,62 +168,30 @@ interface XRRingSceneProps {
 export function XRRingScene({ xrSession, onSessionEnd }: XRRingSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  useEffect(() => {
+    if (xrSession) {
+      xrSession.addEventListener("end", onSessionEnd)
+      return () => {
+        xrSession.removeEventListener("end", onSessionEnd)
+      }
+    }
+  }, [xrSession, onSessionEnd])
+
   return (
     <div className="w-full h-screen" role="application" aria-label="3D Ring Room XR Experience">
       <Canvas ref={canvasRef} gl={{ antialias: true, alpha: true }} camera={{ position: [0, 1.6, 0], fov: 70 }}>
-        <XR>
-          <Controllers />
-          <Hands />
-          <XRScene />
-        </XR>
+        <XRScene />
       </Canvas>
+
+      {/* Exit button overlay */}
+      <div className="absolute top-4 right-4 z-10">
+        <button
+          onClick={onSessionEnd}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+        >
+          Exit XR View
+        </button>
+      </div>
     </div>
   )
-}
-
-// AR reticle component for hit-test placement
-function ARReticle({ onPlace }: { onPlace: (position: [number, number, number]) => void }) {
-  const reticleRef = useRef<any>(null)
-  const [visible, setVisible] = useState(false)
-
-  useHitTest((hitMatrix) => {
-    if (reticleRef.current) {
-      hitMatrix.decompose(reticleRef.current.position, reticleRef.current.quaternion, reticleRef.current.scale)
-      setVisible(true)
-    }
-  })
-
-  useFrame(() => {
-    if (reticleRef.current && visible) {
-      reticleRef.current.rotation.y += 0.02
-    }
-  })
-
-  const handleClick = useCallback(() => {
-    if (reticleRef.current && visible) {
-      const pos = reticleRef.current.position
-      onPlace([pos.x, pos.y, pos.z])
-    }
-  }, [visible, onPlace])
-
-  return (
-    <group ref={reticleRef} visible={visible} onClick={handleClick}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.08, 0.1, 32]} />
-        <meshBasicMaterial color="#10B981" transparent opacity={0.8} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.02, 32]} />
-        <meshBasicMaterial color="#10B981" />
-      </mesh>
-    </group>
-  )
-}
-
-// Interface for placed rings
-interface PlacedRing {
-  id: string
-  position: [number, number, number]
-  ringData: (typeof RING_CATALOG)[0]
-  anchorId?: string
 }
