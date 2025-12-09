@@ -13,4 +13,4 @@ NEXT_PUBLIC_CUSTOMERIO_SITE_ID=
 // ... existing code ...
 \`\`\`
 
-```typescript file="" isHidden
+\`\`\`typescript file="" isHidden
