@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, Smartphone, Headset, Zap, Calendar } from "lucide-react"
+import { Sparkles, Smartphone, Headset, Zap, Calendar, Gem } from "lucide-react"
 
 export default function Page() {
   return (
@@ -33,6 +33,15 @@ export default function Page() {
           </div>
 
           <div className="flex gap-4 justify-center">
+            <Link href="/ring-room">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Gem className="w-5 h-5 mr-2" />
+                Ring Room Demo
+              </Button>
+            </Link>
             <Link href="/ar/photo-booth">
               <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700">
                 <Smartphone className="w-5 h-5 mr-2" />
