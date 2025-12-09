@@ -589,4 +589,12 @@ export const Analytics = {
       platform: "web",
     })
   },
+
+  track: (eventName: string, properties?: Record<string, any>) => {
+    trackEvent({
+      event: eventName,
+      properties,
+      platform: "web",
+    })
+  },
 }
