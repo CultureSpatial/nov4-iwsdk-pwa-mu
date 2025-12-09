@@ -1,5 +1,7 @@
 "use client"
 
+import { track } from "@vercel/analytics"
+
 export interface AnalyticsEvent {
   event: string
   properties?: Record<string, any>
@@ -30,83 +32,32 @@ function getDeviceType(): string {
   return "desktop"
 }
 
-// Offline queue for events when network is unavailable
-const offlineQueue: AnalyticsEvent[] = []
-
-async function sendToAmplitude(event: AnalyticsEvent): Promise<void> {
-  // Stub for Amplitude - would send to actual Amplitude SDK
-  console.log("[Analytics:Amplitude]", event.event, event.properties)
-}
-
-async function sendToCustomerIO(event: AnalyticsEvent): Promise<void> {
-  // Stub for Customer.io - would send to actual Customer.io SDK
-  console.log("[Analytics:CustomerIO]", event.event, event.properties)
-}
-
-// Lifecycle events that should also go to Customer.io
-const LIFECYCLE_EVENTS = [
-  "session_start",
-  "session_end",
-  "ring_shortlisted",
-  "shortlist_viewed",
-  "appointment_requested",
-  "contact_initiated",
-]
-
 export async function trackEvent(data: AnalyticsEvent): Promise<void> {
-  const enrichedEvent: AnalyticsEvent = {
-    ...data,
+  const enrichedProperties = {
+    ...data.properties,
+    device_type: getDeviceType(),
+    session_id: getSessionId(),
+    platform: data.platform || "web",
     timestamp: Date.now(),
-    sessionId: getSessionId(),
-    properties: {
-      ...data.properties,
-      device_type: getDeviceType(),
-      session_id: getSessionId(),
-    },
   }
 
-  // Check network status
-  const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true
-
-  if (!isOnline) {
-    offlineQueue.push(enrichedEvent)
-    console.log("[Analytics] Queued offline:", enrichedEvent.event)
-    return
-  }
-
-  // Send to Amplitude (all events)
-  await sendToAmplitude(enrichedEvent)
-
-  // Send lifecycle events to Customer.io
-  if (LIFECYCLE_EVENTS.includes(enrichedEvent.event)) {
-    await sendToCustomerIO(enrichedEvent)
-  }
+  // Send to Vercel Analytics
+  track(data.event, enrichedProperties)
 
   // Development logging
   if (process.env.NODE_ENV === "development") {
-    console.log("[v0] Analytics:", enrichedEvent.event, enrichedEvent.properties)
+    console.log("[v0 Analytics]", data.event, enrichedProperties)
   }
 }
 
-// Flush offline queue when back online
-if (typeof window !== "undefined") {
-  window.addEventListener("online", async () => {
-    console.log("[Analytics] Back online, flushing queue:", offlineQueue.length)
-    while (offlineQueue.length > 0) {
-      const event = offlineQueue.shift()
-      if (event) await trackEvent(event)
-    }
-  })
+export function initializeAnalytics(): void {
+  console.log("[v0 Analytics] Initialized with Vercel Analytics")
 }
 
-// Initialize Amplitude (stub)
-export function initializeAmplitude(): void {
-  console.log("[v0] Analytics initialized")
-}
-
-// User identification
+// User identification (stored in session for enrichment)
+let currentUserId: string | null = null
 export function identifyUser(userId: string, traits?: Record<string, any>): void {
-  console.log("[v0] User identified:", userId, traits)
+  currentUserId = userId
   trackEvent({
     event: "user_identified",
     userId,
@@ -117,7 +68,6 @@ export function identifyUser(userId: string, traits?: Record<string, any>): void
 
 // Data deletion request (GDPR compliance)
 export function requestDataDeletion(userId: string): void {
-  console.log("[v0] Data deletion requested:", userId)
   trackEvent({
     event: "data_deletion_requested",
     userId,

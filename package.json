@@ -9,7 +9,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "latest",
     "@hookform/resolvers": "^3.10.0",
     "@meta-spatial/meta-spatial-sdk": "latest",
     "@radix-ui/react-accordion": "1.2.2",
