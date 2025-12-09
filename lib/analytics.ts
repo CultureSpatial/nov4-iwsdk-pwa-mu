@@ -434,4 +434,159 @@ export const Analytics = {
       platform: "web",
     })
   },
+
+  // ===== PHASE 3+4 ANALYTICS EVENTS =====
+  // ===== ERROR EVENTS =====
+  errorOccurred: (errorType: string, errorMessage: string, component: string) => {
+    trackEvent({
+      event: "error_occurred",
+      properties: {
+        error_type: errorType,
+        error_message: errorMessage,
+        component,
+      },
+      platform: "web",
+    })
+  },
+
+  errorBoundaryTriggered: (errorMessage: string, errorStack?: string) => {
+    trackEvent({
+      event: "error_boundary_triggered",
+      properties: {
+        error_message: errorMessage,
+        error_stack: errorStack?.slice(0, 500),
+      },
+      platform: "web",
+    })
+  },
+
+  webglContextLost: () => {
+    trackEvent({
+      event: "webgl_context_lost",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  // ===== AR PLACEMENT EVENTS =====
+  ringPlacedInAR: (ringId: string, ringName: string, position: [number, number, number], hasSpatialAnchor: boolean) => {
+    trackEvent({
+      event: "ring_placed_in_ar",
+      properties: {
+        ring_id: ringId,
+        ring_name: ringName,
+        position_x: position[0],
+        position_y: position[1],
+        position_z: position[2],
+        has_spatial_anchor: hasSpatialAnchor,
+      },
+      platform: "web",
+    })
+  },
+
+  arPlacementReset: (ringCount: number) => {
+    trackEvent({
+      event: "ar_placement_reset",
+      properties: {
+        ring_count: ringCount,
+      },
+      platform: "web",
+    })
+  },
+
+  hitTestStarted: () => {
+    trackEvent({
+      event: "hit_test_started",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  surfaceDetected: (surfaceType: "horizontal" | "vertical" | "unknown") => {
+    trackEvent({
+      event: "surface_detected",
+      properties: {
+        surface_type: surfaceType,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== HAND TRACKING EVENTS =====
+  handTrackingStarted: () => {
+    trackEvent({
+      event: "hand_tracking_started",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  handTrackingLost: () => {
+    trackEvent({
+      event: "hand_tracking_lost",
+      properties: {},
+      platform: "web",
+    })
+  },
+
+  // ===== USER ENGAGEMENT EVENTS =====
+  featureDiscovered: (featureName: string) => {
+    trackEvent({
+      event: "feature_discovered",
+      properties: {
+        feature_name: featureName,
+      },
+      platform: "web",
+    })
+  },
+
+  tooltipViewed: (tooltipId: string) => {
+    trackEvent({
+      event: "tooltip_viewed",
+      properties: {
+        tooltip_id: tooltipId,
+      },
+      platform: "web",
+    })
+  },
+
+  helpAccessed: (helpTopic: string) => {
+    trackEvent({
+      event: "help_accessed",
+      properties: {
+        help_topic: helpTopic,
+      },
+      platform: "web",
+    })
+  },
+
+  userIdle: (idleDurationMs: number) => {
+    trackEvent({
+      event: "user_idle",
+      properties: {
+        idle_duration_ms: idleDurationMs,
+      },
+      platform: "web",
+    })
+  },
+
+  // ===== XR SESSION EVENTS =====
+  xrSessionFailed: (mode: "ar" | "vr", errorMessage: string) => {
+    trackEvent({
+      event: "xr_session_failed",
+      properties: {
+        mode,
+        error_message: errorMessage,
+      },
+      platform: "web",
+    })
+  },
+
+  xrDeviceCapabilities: (capabilities: Record<string, boolean>) => {
+    trackEvent({
+      event: "xr_device_capabilities",
+      properties: capabilities,
+      platform: "web",
+    })
+  },
 }
