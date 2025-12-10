@@ -1,5 +1,6 @@
 import { RingRoomScene } from "@/components/ring-room/ring-room-scene"
 import type { Metadata, Viewport } from "next"
+import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
   title: "Ring Room - Engagement Ring AR Consultation | Emerald Gem",
@@ -51,7 +52,10 @@ export const viewport: Viewport = {
 
 export default function RingRoomPage() {
   return (
-    <main role="main" aria-label="Ring Room AR Experience">
+    <main role="main" aria-label="Ring Room AR Experience" className="relative">
+      <div className="absolute top-4 left-4 z-50">
+        <Badge className="bg-amber-600 hover:bg-amber-700 text-white text-xs shadow-lg">Cultural Tooling</Badge>
+      </div>
       <RingRoomScene />
     </main>
   )

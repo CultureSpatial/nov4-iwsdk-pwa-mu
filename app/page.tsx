@@ -7,10 +7,22 @@ import { Gem, Sparkles, Settings, Monitor } from "lucide-react"
 export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white dark:from-slate-950 dark:to-slate-900">
+      <div className="bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 text-white py-3 px-4">
+        <div className="container mx-auto flex items-center justify-center gap-3">
+          <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          <span className="text-sm font-semibold tracking-wide uppercase">Cultural Tooling</span>
+          <div className="h-px flex-1 max-w-16 bg-white/30" />
+          <span className="text-xs opacity-80">Phygital SDK Experience</span>
+          <div className="h-px flex-1 max-w-16 bg-white/30" />
+          <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-purple-600">
+          <Badge className="mb-2 bg-amber-600 hover:bg-amber-700 text-white">Cultural Tooling</Badge>
+          <Badge className="mb-4 ml-2 bg-purple-600">
             <Sparkles className="w-3 h-3 mr-1" />
             AR Ring Consultation Experience
           </Badge>

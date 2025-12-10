@@ -379,6 +379,7 @@ export default function IWSDKTestPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center gap-2 mb-4">
+            <Badge className="bg-amber-600 hover:bg-amber-700 text-white">Cultural Tooling</Badge>
             <Link href="/">
               <Button variant="outline" size="sm" className="gap-2 bg-transparent">
                 <Home className="h-4 w-4" />
@@ -530,19 +531,19 @@ export default function IWSDKTestPage() {
                 <Separator />
 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Detected Device</p>
+                  <p className="text-sm text-muted-foreground">Detected Device</p>
                   <Badge variant="outline" className="text-sm">
                     {status.detectedDevice}
                   </Badge>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Device Info</p>
+                  <p className="text-sm text-muted-foreground">Device Info</p>
                   <p className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{status.deviceInfo}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">User Agent</p>
+                  <p className="text-sm text-muted-foreground">User Agent</p>
                   <p className="text-xs font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">
                     {status.userAgent}
                   </p>
@@ -626,7 +627,7 @@ export default function IWSDKTestPage() {
             <Separator />
 
             <div>
-              <p className="text-sm font-medium mb-2">Passthrough Mode</p>
+              <p className="text-sm text-muted-foreground mb-2">Passthrough Mode</p>
               <Badge variant={passthroughSupported ? "default" : "secondary"}>
                 {passthroughSupported ? "Supported" : "Not Supported"}
               </Badge>

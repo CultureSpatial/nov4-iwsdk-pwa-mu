@@ -190,6 +190,7 @@ export default function JewelerConsolePage() {
                 </Button>
               </Link>
               <div className="h-6 w-px bg-purple-900/30" />
+              <Badge className="bg-amber-600 hover:bg-amber-700 text-white text-xs">Cultural Tooling</Badge>
               <div className="flex items-center gap-2">
                 <Gem className="h-6 w-6 text-purple-400" />
                 <span className="text-xl font-semibold text-white">Ring Room</span>
