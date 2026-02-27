@@ -4,8 +4,8 @@ import "./globals.css"
 import LayoutClient from "./layout-client"
 
 export const metadata: Metadata = {
-  title: "Emerald Gem AR Platform",
-  description: "Multi-platform immersive hospitality experiences",
+  title: "Production Documents | Meta Ray-Ban Verchandising Shoot",
+  description: "Professional tabbed interface for production call sheet and schedule documentation",
   generator: "v0.app",
   icons: {
     icon: [
