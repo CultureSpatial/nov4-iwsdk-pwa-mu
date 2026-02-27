@@ -42,6 +42,12 @@ export default function Page() {
                 Jeweler Console
               </Button>
             </Link>
+            <Link href="/production-docs">
+              <Button size="lg" variant="outline">
+                <Sparkles className="w-5 h-5 mr-2" />
+                Production Docs
+              </Button>
+            </Link>
             <Link href="/test/iwsdk">
               <Button size="lg" variant="outline">
                 <Settings className="w-5 h-5 mr-2" />
